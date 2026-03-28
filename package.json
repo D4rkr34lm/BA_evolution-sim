@@ -1,0 +1,43 @@
+{
+    "name": "@webwriter/evolution-sim",
+    "version": "0.0.0",
+    "scripts": {
+        "prepublishOnly": "@webwriter/build",
+        "localize": "lit-localize extract && @webwriter/build localize && lit-localize build",
+        "dev": "@webwriter/build dev",
+        "test": "vitest"
+    },
+    "dependencies": {
+        "@webwriter/lit": "^2.0.0",
+        "lit": "^3.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.0.1",
+        "@lit/localize-tools": "^0.8",
+        "@vitest/coverage-v8": "^4.1.2",
+        "@vitest/eslint-plugin": "^1.6.13",
+        "eslint": "^9.1.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-lit": "^2.2.1",
+        "eslint-plugin-prettier": "^5.5.5",
+        "globals": "^17.4.0",
+        "jiti": "^2.6.1",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.57.2",
+        "vite": "^8.0.3",
+        "vite-tsconfig-paths": "^6.1.1",
+        "vitest": "^4.1.2"
+    },
+    "exports": {
+        "./widgets/webwriter-evolution-sim.*": {
+            "source": "./src/widgets/webwriter-evolution-sim.ts",
+            "default": "./src/dist/widgets/webwriter-evolution-sim.*"
+        }
+    },
+    "keywords": [
+        "webwriter-widget"
+    ],
+    "license": "MIT",
+    "author": "Manuel Frohn (D4rkr34lm)"
+}
