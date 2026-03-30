@@ -1,0 +1,128 @@
+import { hasValue } from "@/utils/typeGuards";
+import { Vec2 } from "./position";
+import { times, zip } from "lodash-es";
+
+const AGENT_ENERGY_CAPACITY = 25;
+
+interface Agent {
+  position: Vec2;
+  energyCapacity: number;
+  currentEnergy: number;
+}
+
+const FOOD_BASE_ENERGY = 5;
+const FOOD_RECOVERY_RATE = 25;
+
+interface FoodSource {
+  position: Vec2;
+  recoveryRate: number;
+  ticksTillRecovery: number;
+
+  baseEnergy: number;
+}
+
+const SIMULATION_WORLD_SIZE: Vec2 = { x: 50, y: 50 };
+const SIMULATION_FOOD_AMOUNT = 10;
+const SIMULATION_INITIAL_AGENT_COUNT = 2;
+
+interface Simulation {
+  foodSources: FoodSource[];
+  agents: Agent[];
+}
+
+function getUniqueRandomArray({
+  amount,
+  max,
+}: {
+  amount: number;
+  max: number;
+}) {
+  if (amount > max) {
+    throw new Error(
+      `Size may not excide max number size found: size:${amount} max:${max}`,
+    );
+  }
+
+  const randoms = new Set<number>();
+
+  while (randoms.size < amount) {
+    randoms.add(Math.floor(Math.random() * max));
+  }
+
+  return Array.from(randoms);
+}
+
+function getUniqueRandomPostions({
+  amount,
+  max,
+}: {
+  amount: number;
+  max: Vec2;
+}) {
+  const xPositions = getUniqueRandomArray({ amount, max: max.x });
+  const yPositions = getUniqueRandomArray({ amount, max: max.y });
+
+  return zip(xPositions, yPositions)
+    .filter(
+      (pos): pos is [number, number] => hasValue(pos[0]) && hasValue(pos[1]),
+    )
+    .map(([x, y]) => ({ x, y }));
+}
+
+function spawnFoodSources({
+  worldSize,
+  amount,
+}: {
+  worldSize: Vec2;
+  amount: number;
+}): FoodSource[] {
+  const sourcePositions = getUniqueRandomPostions({
+    amount,
+    max: worldSize,
+  });
+
+  return sourcePositions.map((pos) => ({
+    position: pos,
+    recoveryRate: FOOD_RECOVERY_RATE,
+    ticksTillRecovery: 0,
+    baseEnergy: FOOD_BASE_ENERGY,
+  }));
+}
+
+function spawnAgents({
+  worldSize,
+  amount,
+}: {
+  worldSize: Vec2;
+  amount: number;
+}): Agent[] {
+  const agentPositions = getUniqueRandomPostions({
+    max: worldSize,
+    amount,
+  });
+
+  return agentPositions.map((pos) => ({
+    position: pos,
+    energyCapacity: AGENT_ENERGY_CAPACITY,
+    currentEnergy: AGENT_ENERGY_CAPACITY,
+  }));
+}
+
+function generateNewSimulation(): Simulation {
+  const foodSources = spawnFoodSources({
+    worldSize: SIMULATION_WORLD_SIZE,
+    amount: SIMULATION_FOOD_AMOUNT,
+  });
+
+  const initialAgents = spawnAgents({
+    worldSize: SIMULATION_WORLD_SIZE,
+    amount: SIMULATION_INITIAL_AGENT_COUNT,
+  });
+
+  return {
+    foodSources,
+    agents: initialAgents,
+  };
+}
+
+function runSimulation(simulation: Simulation) {}
