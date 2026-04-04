@@ -1,12 +1,26 @@
 import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "./position";
-import { times, zip } from "lodash-es";
+import { zip } from "lodash-es";
 
 const AGENT_ENERGY_CAPACITY = 25;
+const AGENT_REPRODUCTION_COST = 15;
+
+interface Phenotype {
+  energyCapacity: number;
+  reproductionCost: number;
+}
+
+function getAgentPhenotype(): Phenotype {
+  return {
+    energyCapacity: AGENT_ENERGY_CAPACITY,
+    reproductionCost: AGENT_REPRODUCTION_COST,
+  };
+}
 
 interface Agent {
+  phenotype: Phenotype;
+
   position: Vec2;
-  energyCapacity: number;
   currentEnergy: number;
 }
 
@@ -89,6 +103,16 @@ function spawnFoodSources({
   }));
 }
 
+function spawnAgent({ position }: { position: Vec2 }): Agent {
+  const agentPhenotype = getAgentPhenotype();
+
+  return {
+    phenotype: agentPhenotype,
+    position,
+    currentEnergy: agentPhenotype.energyCapacity,
+  };
+}
+
 function spawnAgents({
   worldSize,
   amount,
@@ -101,11 +125,7 @@ function spawnAgents({
     amount,
   });
 
-  return agentPositions.map((pos) => ({
-    position: pos,
-    energyCapacity: AGENT_ENERGY_CAPACITY,
-    currentEnergy: AGENT_ENERGY_CAPACITY,
-  }));
+  return agentPositions.map((pos) => spawnAgent({ position: pos }));
 }
 
 function generateNewSimulation(): Simulation {
