@@ -1,21 +1,161 @@
-import { hasValue } from "@/utils/typeGuards";
-import { Vec2 } from "./position";
-import { zip } from "lodash-es";
+import { hasNoValue, hasValue } from "@/utils/typeGuards";
+import { addVectors, Direction, Vec2 } from "./position";
+import { isEqual, partition, zip } from "lodash-es";
+import { err, ok, Result } from "neverthrow";
+
+const ACTION_ERRORS = {
+  ERR_NOT_ENOUGH_ENERGY: "not-enough-energy",
+  ERR_NOT_IN_RANGE: "not-in-range",
+} as const;
+
+type ActionError = (typeof ACTION_ERRORS)[keyof typeof ACTION_ERRORS];
 
 const AGENT_ENERGY_CAPACITY = 25;
 const AGENT_REPRODUCTION_COST = 15;
+const AGENT_MOVE_COST = 1;
 
 interface Phenotype {
   energyCapacity: number;
   reproductionCost: number;
+  moveCost: number;
 }
 
 function getAgentPhenotype(): Phenotype {
   return {
     energyCapacity: AGENT_ENERGY_CAPACITY,
     reproductionCost: AGENT_REPRODUCTION_COST,
+    moveCost: AGENT_MOVE_COST,
   };
 }
+
+interface AgentContext {
+  me: Agent;
+  otherAgents: Agent[];
+  foodSources: FoodSource[];
+}
+
+interface Action<TName extends string, TActionParams> {
+  name: TName;
+  execute: (
+    context: AgentContext,
+    params: TActionParams,
+  ) => Result<Partial<AgentContext>, ActionError>;
+}
+
+interface ActionDefinition<TName extends string, TActionParams> {
+  name: TName;
+  buildAction: (phenotype: Phenotype) => Action<TName, TActionParams>;
+}
+
+function defineAction<TName extends string, TActionParams = unknown>({
+  name,
+  buildAction,
+}: {
+  name: TName;
+  buildAction: (
+    phenotype: Phenotype,
+  ) => Action<TName, TActionParams>["execute"];
+}): ActionDefinition<TName, TActionParams> {
+  return {
+    name,
+    buildAction: (phenotype) => ({
+      name,
+      execute: buildAction(phenotype),
+    }),
+  };
+}
+
+const moveActionDefinition = defineAction({
+  name: "move",
+  buildAction: ({ moveCost }) => {
+    return ({ me }, direction: Direction) => {
+      const newEnergy = me.currentEnergy - moveCost;
+
+      if (newEnergy < 0) {
+        return err(ACTION_ERRORS.ERR_NOT_ENOUGH_ENERGY);
+      } else {
+        const newPosition = addVectors(me.position, direction);
+
+        const changedAgent = {
+          ...me,
+          position: newPosition,
+          currentEnergy: newEnergy,
+        };
+
+        return ok({
+          me: changedAgent,
+        });
+      }
+    };
+  },
+});
+
+const reproduceActionDefinition = defineAction({
+  name: "reproduce",
+  buildAction: ({ reproductionCost }) => {
+    return ({ me, otherAgents }) => {
+      const newEnergy = me.currentEnergy - reproductionCost;
+
+      if (newEnergy < 0) {
+        return err(ACTION_ERRORS.ERR_NOT_ENOUGH_ENERGY);
+      } else {
+        const changedAgent = {
+          ...me,
+          currentEnergy: newEnergy,
+        };
+
+        const newAgent = spawnAgent({ position: me.position });
+
+        return ok({
+          me: changedAgent,
+          otherAgents: [...otherAgents, newAgent],
+        });
+      }
+    };
+  },
+});
+
+const eatActionDefinition = defineAction({
+  name: "eat",
+  buildAction: ({ energyCapacity }) => {
+    return ({ me, foodSources }) => {
+      const [[foodSourceInRange, ...remainder], other] = partition(
+        foodSources,
+        (source) => isEqual(source.position, me.position),
+      );
+
+      if (hasNoValue(foodSourceInRange)) {
+        return err(ACTION_ERRORS.ERR_NOT_IN_RANGE);
+      } else {
+        const energyGained = Math.min(
+          foodSourceInRange.baseEnergyGainFromConsumption,
+          energyCapacity - me.currentEnergy,
+        );
+
+        const changedAgent = {
+          ...me,
+          currentEnergy: me.currentEnergy + energyGained,
+        };
+
+        const changedFoodSource = {
+          ...foodSourceInRange,
+          ticksTillRecovery: foodSourceInRange.recoveryRate,
+        };
+
+        return ok({
+          me: changedAgent,
+          foodSources: [...other, ...remainder, changedFoodSource],
+        });
+      }
+    };
+  },
+});
+
+const definedActions = [
+  moveActionDefinition,
+  reproduceActionDefinition,
+  eatActionDefinition,
+];
 
 interface Agent {
   phenotype: Phenotype;
@@ -24,7 +164,7 @@ interface Agent {
   currentEnergy: number;
 }
 
-const FOOD_BASE_ENERGY = 5;
+const FOOD_BASE_ENERGY_GAIN_FROM_CONSUMPTION = 5;
 const FOOD_RECOVERY_RATE = 25;
 
 interface FoodSource {
@@ -32,7 +172,7 @@ interface FoodSource {
   recoveryRate: number;
   ticksTillRecovery: number;
 
-  baseEnergy: number;
+  baseEnergyGainFromConsumption: number;
 }
 
 const SIMULATION_WORLD_SIZE: Vec2 = { x: 50, y: 50 };
@@ -99,7 +239,7 @@ function spawnFoodSources({
     position: pos,
     recoveryRate: FOOD_RECOVERY_RATE,
     ticksTillRecovery: 0,
-    baseEnergy: FOOD_BASE_ENERGY,
+    baseEnergyGainFromConsumption: FOOD_BASE_ENERGY_GAIN_FROM_CONSUMPTION,
   }));
 }
 
