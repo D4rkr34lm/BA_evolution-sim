@@ -2,7 +2,7 @@ import { Result } from "neverthrow";
 import { AgentContext, Phenotype } from "..";
 import { ActionError } from "./actionErrors";
 
-interface Action<TName extends string, TActionParams> {
+export interface Action<TName extends string, TActionParams> {
   name: TName;
   execute: (
     context: AgentContext,
@@ -15,7 +15,7 @@ interface ActionDefinition<TName extends string, TActionParams> {
   buildAction: (phenotype: Phenotype) => Action<TName, TActionParams>;
 }
 
-export function defineAction<TName extends string, TActionParams = unknown>({
+export function defineAction<TName extends string, TActionParams = never>({
   name,
   buildAction,
 }: {
