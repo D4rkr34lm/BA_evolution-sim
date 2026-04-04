@@ -1,12 +1,6 @@
 import { Result } from "neverthrow";
-import { Agent, FoodSource, Phenotype } from "..";
+import { AgentContext, Phenotype } from "..";
 import { ActionError } from "./actionErrors";
-
-interface AgentContext {
-  me: Agent;
-  otherAgents: Agent[];
-  foodSources: FoodSource[];
-}
 
 interface Action<TName extends string, TActionParams> {
   name: TName;

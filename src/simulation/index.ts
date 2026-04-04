@@ -2,6 +2,12 @@ import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "./position";
 import { zip } from "lodash-es";
 
+export interface AgentContext {
+  me: Agent;
+  otherAgents: Agent[];
+  foodSources: FoodSource[];
+}
+
 const AGENT_ENERGY_CAPACITY = 25;
 const AGENT_REPRODUCTION_COST = 15;
 const AGENT_MOVE_COST = 1;

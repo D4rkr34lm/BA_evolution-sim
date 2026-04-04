@@ -7,3 +7,7 @@ export const definedActions = [
   reproduceActionDefinition,
   eatActionDefinition,
 ];
+
+export type DefinedAction = (typeof definedActions)[number];
+
+export type ActionName = DefinedAction["name"];
