@@ -2,7 +2,7 @@ import { Result } from "neverthrow";
 import { Agent, FoodSource, Phenotype } from "..";
 import { ActionError } from "./actionErrors";
 
-interface ActionContext {
+interface AgentContext {
   me: Agent;
   otherAgents: Agent[];
   foodSources: FoodSource[];
@@ -11,9 +11,9 @@ interface ActionContext {
 interface Action<TName extends string, TActionParams> {
   name: TName;
   execute: (
-    context: ActionContext,
+    context: AgentContext,
     params: TActionParams,
-  ) => Result<Partial<ActionContext>, ActionError>;
+  ) => Result<Partial<AgentContext>, ActionError>;
 }
 
 interface ActionDefinition<TName extends string, TActionParams> {

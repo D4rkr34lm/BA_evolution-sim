@@ -1,7 +1,6 @@
-import { hasNoValue, hasValue } from "@/utils/typeGuards";
-import { addVectors, Direction, Vec2 } from "./position";
-import { isEqual, partition, zip } from "lodash-es";
-import { err, ok, Result } from "neverthrow";
+import { hasValue } from "@/utils/typeGuards";
+import { Vec2 } from "./position";
+import { zip } from "lodash-es";
 
 const AGENT_ENERGY_CAPACITY = 25;
 const AGENT_REPRODUCTION_COST = 15;
