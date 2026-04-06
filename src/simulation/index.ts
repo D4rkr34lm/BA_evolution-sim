@@ -1,6 +1,7 @@
 import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "./position";
 import { zip } from "lodash-es";
+import { getAgentStrategy, Strategy } from "./strategy";
 
 export interface AgentContext {
   me: Agent;
@@ -28,6 +29,7 @@ function getAgentPhenotype(): Phenotype {
 
 export interface Agent {
   phenotype: Phenotype;
+  strategy: Strategy;
 
   position: Vec2;
   currentEnergy: number;
@@ -75,7 +77,7 @@ function getUniqueRandomArray({
   return Array.from(randoms);
 }
 
-function getUniqueRandomPostions({
+function getUniqueRandomPositions({
   amount,
   max,
 }: {
@@ -99,7 +101,7 @@ function spawnFoodSources({
   worldSize: Vec2;
   amount: number;
 }): FoodSource[] {
-  const sourcePositions = getUniqueRandomPostions({
+  const sourcePositions = getUniqueRandomPositions({
     amount,
     max: worldSize,
   });
@@ -117,6 +119,7 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
 
   return {
     phenotype: agentPhenotype,
+    strategy: getAgentStrategy(agentPhenotype),
     position,
     currentEnergy: agentPhenotype.energyCapacity,
   };
@@ -129,7 +132,7 @@ function spawnAgents({
   worldSize: Vec2;
   amount: number;
 }): Agent[] {
-  const agentPositions = getUniqueRandomPostions({
+  const agentPositions = getUniqueRandomPositions({
     max: worldSize,
     amount,
   });
@@ -154,4 +157,25 @@ function generateNewSimulation(): Simulation {
   };
 }
 
-function runSimulation(simulation: Simulation) {}
+function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
+  return {
+    me: agent,
+    otherAgents: simulation.agents.filter((a) => a !== agent),
+    foodSources: simulation.foodSources,
+  };
+}
+
+function runAgent(agent: Agent, context: AgentContext) {
+  const behaviorToExecuteName = agent.strategy.currentState.behaviorToExecute;
+}
+
+function runSimulation(simulation: Simulation) {
+  const updatedFoodSources = simulation.foodSources.map((source) => ({
+    ...source,
+    ticksTillRecovery: Math.max(0, source.ticksTillRecovery - 1),
+  }));
+
+  const updatedAgents = simulation.agents.map((agent) => {
+    const agentContext = getAgentContext(agent, simulation);
+  });
+}

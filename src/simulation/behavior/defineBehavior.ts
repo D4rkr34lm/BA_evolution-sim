@@ -3,6 +3,7 @@
 // Use wrapped actions ? => yes to abstract away giving context and building in actions results => translate to non seperated error code system
 
 import { AgentContext, Phenotype } from "..";
+import { ACTION_OK, ActionResult } from "../actions/actionErrors";
 import { ActionName, ActionParams } from "../actions/definitions";
 import { Directions } from "../position";
 
@@ -22,7 +23,7 @@ interface BehaviorDefinition<
           ...args: ActionParams<TActionName> extends never
             ? []
             : [params: ActionParams<TActionName>]
-        ) => boolean;
+        ) => ActionResult;
       };
     },
   ) => {
@@ -57,7 +58,7 @@ function defineBehavior<
           ...args: ActionParams<ActionName> extends never
             ? []
             : [params: ActionParams<ActionName>]
-        ) => boolean;
+        ) => ActionResult;
       };
     },
   ) => {
@@ -80,14 +81,20 @@ const defaultTestBehavior = defineBehavior({
   name: "defaultTestBehavior",
   requiredActions: ["move", "reproduce", "eat"],
   decideAction: (phenotype, context, actions) => {
-    if (actions.eat.canExecute()) {
+    if (actions.eat.canExecute() === ACTION_OK) {
       return { name: "eat" };
-    } else if (actions.reproduce.canExecute()) {
+    } else if (actions.reproduce.canExecute() === ACTION_OK) {
       return { name: "reproduce" };
-    } else if (actions.move.canExecute(Directions.Down)) {
+    } else if (actions.move.canExecute(Directions.Down) === ACTION_OK) {
       return { name: "move", params: Directions.Down };
     } else {
       throw new Error("No action can be executed");
     }
   },
 });
+
+export const definedBehaviors = [defaultTestBehavior];
+
+export type DefinedBehavior = (typeof definedBehaviors)[number];
+
+export type BehaviorName = DefinedBehavior["name"];
