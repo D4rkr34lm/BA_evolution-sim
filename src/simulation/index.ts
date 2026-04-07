@@ -2,6 +2,8 @@ import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "./position";
 import { zip } from "lodash-es";
 import { getAgentStrategy, Strategy } from "./strategy";
+import { getDefinedBehavior } from "./behavior/defineBehavior";
+import { definedActions } from "./actions/definitions";
 
 export interface AgentContext {
   me: Agent;
@@ -165,11 +167,16 @@ function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
   };
 }
 
+function buildAgentActionMap(agent: Agent) {}
+
 function runAgent(agent: Agent, context: AgentContext) {
   const behaviorToExecuteName = agent.strategy.currentState.behaviorToExecute;
+
+  const behaviorToExecute = getDefinedBehavior(behaviorToExecuteName);
 }
 
 function runSimulation(simulation: Simulation) {
+  // TODO extract into own function
   const updatedFoodSources = simulation.foodSources.map((source) => ({
     ...source,
     ticksTillRecovery: Math.max(0, source.ticksTillRecovery - 1),

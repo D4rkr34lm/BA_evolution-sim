@@ -2,6 +2,7 @@
 // Context => readonly
 // Use wrapped actions ? => yes to abstract away giving context and building in actions results => translate to non seperated error code system
 
+import { hasNoValue } from "@/utils/typeGuards";
 import { AgentContext, Phenotype } from "..";
 import { ACTION_OK, ActionResult } from "../actions/actionErrors";
 import { ActionName, ActionParams } from "../actions/definitions";
@@ -94,6 +95,17 @@ const defaultTestBehavior = defineBehavior({
 });
 
 export const definedBehaviors = [defaultTestBehavior];
+
+export function getDefinedBehavior(name: BehaviorName) {
+  const behavior = definedBehaviors.find((behavior) => behavior.name === name);
+
+  if (hasNoValue(behavior)) {
+    // TODO remove dead path
+    throw new Error(`Behavior with name ${name} not found`);
+  }
+
+  return behavior;
+}
 
 export type DefinedBehavior = (typeof definedBehaviors)[number];
 

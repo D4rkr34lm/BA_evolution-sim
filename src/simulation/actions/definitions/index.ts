@@ -8,7 +8,7 @@ export const definedActions = [
   moveActionDefinition,
   reproduceActionDefinition,
   eatActionDefinition,
-];
+] as const;
 
 export type DefinedAction = (typeof definedActions)[number];
 
