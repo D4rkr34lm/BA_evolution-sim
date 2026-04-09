@@ -3,10 +3,11 @@
 // Use wrapped actions ? => yes to abstract away giving context and building in actions results => translate to non seperated error code system
 
 import { hasNoValue } from "@/utils/typeGuards";
-import { AgentContext, Phenotype } from "..";
 import { ACTION_OK, ActionResult } from "../actions/actionErrors";
 import { ActionName, ActionParams } from "../actions/definitions";
 import { Directions } from "../position";
+import { AgentContext } from "../agentContext";
+import { Phenotype } from "../genetics/phenotype";
 
 interface BehaviorDefinition<
   TName extends string,

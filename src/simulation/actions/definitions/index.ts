@@ -1,14 +1,16 @@
-import { Phenotype } from "@/simulation";
 import { eatActionDefinition } from "./eat";
 import { moveActionDefinition } from "./move";
 import { reproduceActionDefinition } from "./reproduce";
-import { Action } from "../defineAction";
+import { Action, ActionMap } from "../defineAction";
+import { Phenotype } from "@/simulation/genetics/phenotype";
 
 export const definedActions = [
   moveActionDefinition,
   reproduceActionDefinition,
   eatActionDefinition,
-] as const;
+];
+
+export type DefinedActionMap = ActionMap<typeof definedActions>;
 
 export type DefinedAction = (typeof definedActions)[number];
 
