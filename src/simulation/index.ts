@@ -25,7 +25,7 @@ function runAgent(agent: Agent, context: AgentContext) {
   const deciderMap = buildEnrichedActionDeciderMap(agent.actionMap, context);
   const behaviorToExecute = getDefinedBehavior(behaviorToExecuteName);
 
-  const decidedBehavior = behaviorToExecute.decideAction(
+  const decidedAction = behaviorToExecute.decideAction(
     agent.phenotype,
     context,
     deciderMap,
