@@ -3,85 +3,57 @@
 // Use wrapped actions ? => yes to abstract away giving context and building in actions results => translate to non seperated error code system
 
 import { hasNoValue } from "@/utils/typeGuards";
-import { ACTION_OK, ActionResult } from "../actions/actionErrors";
-import { ActionName, ActionParams } from "../actions/definitions";
+import { ACTION_OK } from "../actions/actionErrors";
+import { DefinedActionMap } from "../actions/definitions";
 import { Directions } from "../position";
 import { AgentContext } from "../agentContext";
 import { Phenotype } from "../genetics/phenotype";
+import { Action, EnrichedActionDeciderMap } from "../actions/defineAction";
 
-interface BehaviorDefinition<
-  TName extends string,
-  TRequiredActions extends ActionName[],
-  TAvailableActions extends ActionName = TRequiredActions[number],
-> {
+type DecidedActionFromAction<
+  TAction extends Action,
+  TName = TAction["name"],
+  TParams = Parameters<TAction["execute"]>[1],
+> = [TParams] extends [never]
+  ? { name: TName }
+  : { name: TName; params: TParams };
+
+type DecidedAction<TActionMap extends Record<string, Action>> = {
+  [TActionName in keyof TActionMap]: DecidedActionFromAction<
+    TActionMap[TActionName]
+  >;
+}[keyof TActionMap];
+
+interface BehaviorDefinition<TName extends string> {
   name: TName;
-  requiredActions: TRequiredActions;
   decideAction: (
     phenotype: Phenotype,
     context: AgentContext,
-    actions: {
-      [TActionName in TAvailableActions]: {
-        canExecute: (
-          ...args: ActionParams<TActionName> extends never
-            ? []
-            : [params: ActionParams<TActionName>]
-        ) => ActionResult;
-      };
-    },
-  ) => {
-    [ActionName in TAvailableActions]: ActionParams<ActionName> extends never
-      ? { name: ActionName }
-      : {
-          name: ActionName;
-          params: ActionParams<ActionName>;
-        };
-  }[TAvailableActions];
+    actions: EnrichedActionDeciderMap<DefinedActionMap>,
+  ) => DecidedAction<DefinedActionMap>;
 }
 
 // Action params are missing
 
-function defineBehavior<
-  TName extends string,
-  TRequiredActions extends ActionName[],
-  TAvailableActions extends ActionName = TRequiredActions[number],
->({
+function defineBehavior<TName extends string>({
   name,
-  requiredActions,
   decideAction,
 }: {
   name: TName;
-  requiredActions: TRequiredActions;
   decideAction: (
     phenotype: Phenotype,
     context: AgentContext,
-    actions: {
-      [ActionName in TAvailableActions]: {
-        canExecute: (
-          ...args: ActionParams<ActionName> extends never
-            ? []
-            : [params: ActionParams<ActionName>]
-        ) => ActionResult;
-      };
-    },
-  ) => {
-    [ActionName in TAvailableActions]: ActionParams<ActionName> extends never
-      ? { name: ActionName }
-      : {
-          name: ActionName;
-          params: ActionParams<ActionName>;
-        };
-  }[TAvailableActions];
-}): BehaviorDefinition<TName, TRequiredActions, TAvailableActions> {
+    actions: EnrichedActionDeciderMap<DefinedActionMap>,
+  ) => DecidedAction<DefinedActionMap>;
+}): BehaviorDefinition<TName> {
   return {
     name,
-    requiredActions,
     decideAction,
   };
 }
 
 const defaultTestBehavior = defineBehavior({
   name: "defaultTestBehavior",
-  requiredActions: ["move", "reproduce", "eat"],
   decideAction: (phenotype, context, actions) => {
     if (actions.eat.canExecute() === ACTION_OK) {
       return { name: "eat" };

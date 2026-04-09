@@ -58,28 +58,26 @@ export function buildActionMap<TDefinedActions extends ActionDefinition[]>(
   ) as ActionMap<TDefinedActions>;
 }
 
-type EnrichedActionDeciderMap<TActionMap extends Record<string, Action>> = {
+export type EnrichedActionDeciderMap<
+  TActionMap extends Record<string, Action>,
+> = {
   [TActionName in keyof TActionMap]: {
     canExecute: (
       ...params: TActionMap[TActionName] extends Action<infer _, infer TParams>
-        ? TParams extends never
+        ? [TParams] extends [never]
           ? []
-          : [params: TParams]
+          : [args: TParams]
         : never
     ) => ActionResult;
   };
 };
-
-type Pretify<T> = {
-  [K in keyof T]: T[K];
-} & {};
 
 export function buildEnrichedActionDeciderMap<
   TActionMap extends Record<string, Action>,
 >(
   actionMap: TActionMap,
   agentContext: AgentContext,
-): Pretify<EnrichedActionDeciderMap<TActionMap>> {
+): EnrichedActionDeciderMap<TActionMap> {
   return mapValues(actionMap, (action) => {
     const canExecute = (...params: never) => {
       const result = action.execute(agentContext, params);
