@@ -1,8 +1,9 @@
-import { Result } from "neverthrow";
-import { ACTION_OK, ActionError, ActionResult } from "./actionErrors";
+import { err, ok, Result } from "neverthrow";
+import { ActionError } from "./actionErrors";
 import { keyBy, mapValues } from "lodash-es";
 import { AgentContext } from "../agentContext";
 import { Phenotype } from "../genetics/phenotype";
+import { DecidedActionFromAction } from "../behavior/defineBehavior";
 
 export interface Action<TName extends string = string, TActionParams = never> {
   name: TName;
@@ -62,13 +63,14 @@ export type EnrichedActionDeciderMap<
   TActionMap extends Record<string, Action>,
 > = {
   [TActionName in keyof TActionMap]: {
+    // TODO this should probably be a factory or return a rexecutor function so that behaviors can only decide for runnable actions
     canExecute: (
       ...params: TActionMap[TActionName] extends Action<infer _, infer TParams>
         ? [TParams] extends [never]
           ? []
           : [args: TParams]
         : never
-    ) => ActionResult;
+    ) => Result<DecidedActionFromAction<TActionMap[TActionName]>, ActionError>;
   };
 };
 
@@ -83,14 +85,17 @@ export function buildEnrichedActionDeciderMap<
       const result = action.execute(agentContext, params);
 
       if (result.isOk()) {
-        return ACTION_OK;
+        return ok({
+          name: action.name,
+          params,
+        });
       } else {
-        return result.error;
+        return err(result.error);
       }
     };
 
     return {
       canExecute,
     };
-  }) as EnrichedActionDeciderMap<TActionMap>;
+  }) as unknown as EnrichedActionDeciderMap<TActionMap>;
 }

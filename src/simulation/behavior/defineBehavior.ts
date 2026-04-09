@@ -3,14 +3,13 @@
 // Use wrapped actions ? => yes to abstract away giving context and building in actions results => translate to non seperated error code system
 
 import { hasNoValue } from "@/utils/typeGuards";
-import { ACTION_OK } from "../actions/actionErrors";
 import { DefinedActionMap } from "../actions/definitions";
 import { Directions } from "../position";
 import { AgentContext } from "../agentContext";
 import { Phenotype } from "../genetics/phenotype";
 import { Action, EnrichedActionDeciderMap } from "../actions/defineAction";
 
-type DecidedActionFromAction<
+export type DecidedActionFromAction<
   TAction extends Action,
   TName = TAction["name"],
   TParams = Parameters<TAction["execute"]>[1],
@@ -55,14 +54,12 @@ function defineBehavior<TName extends string>({
 const defaultTestBehavior = defineBehavior({
   name: "defaultTestBehavior",
   decideAction: (phenotype, context, actions) => {
-    if (actions.eat.canExecute() === ACTION_OK) {
-      return { name: "eat" };
-    } else if (actions.reproduce.canExecute() === ACTION_OK) {
-      return { name: "reproduce" };
-    } else if (actions.move.canExecute(Directions.Down) === ACTION_OK) {
-      return { name: "move", params: Directions.Down };
+    const moveDecisionResult = actions.move.canExecute(Directions.Up);
+
+    if (moveDecisionResult.isOk()) {
+      return moveDecisionResult.value;
     } else {
-      throw new Error("No action can be executed");
+      throw new Error("TODO implement more / fallback / noop action");
     }
   },
 });
