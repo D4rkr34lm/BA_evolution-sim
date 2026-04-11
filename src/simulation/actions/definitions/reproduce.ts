@@ -1,7 +1,7 @@
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
-import { spawnAgent } from "@/simulation";
 import { defineAction } from "../defineAction";
+import { spawnAgent } from "@/simulation/agent/agent";
 
 export const reproduceActionDefinition = defineAction({
   name: "reproduce",

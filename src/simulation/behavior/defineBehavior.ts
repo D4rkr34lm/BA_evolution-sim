@@ -7,9 +7,10 @@ import { DefinedActionMap } from "../actions/definitions";
 import { Directions } from "../position";
 import { AgentContext } from "../agentContext";
 import { Phenotype } from "../genetics/phenotype";
-import { Action, EnrichedActionDeciderMap } from "../actions/defineAction";
+import { Action } from "../actions/defineAction";
+import { EnrichedActionDeciderMap } from "../actions/actionDeciderMap";
 
-export type DecidedActionFromAction<
+export type ActionDecisionFromAction<
   TAction extends Action,
   TName = TAction["name"],
   TParams = Parameters<TAction["execute"]>[1],
@@ -17,8 +18,8 @@ export type DecidedActionFromAction<
   ? { name: TName }
   : { name: TName; params: TParams };
 
-type DecidedAction<TActionMap extends Record<string, Action>> = {
-  [TActionName in keyof TActionMap]: DecidedActionFromAction<
+type ActionDecision<TActionMap extends Record<string, Action>> = {
+  [TActionName in keyof TActionMap]: ActionDecisionFromAction<
     TActionMap[TActionName]
   >;
 }[keyof TActionMap];
@@ -29,10 +30,8 @@ interface BehaviorDefinition<TName extends string> {
     phenotype: Phenotype,
     context: AgentContext,
     actions: EnrichedActionDeciderMap<DefinedActionMap>,
-  ) => DecidedAction<DefinedActionMap>;
+  ) => ActionDecision<DefinedActionMap>;
 }
-
-// Action params are missing
 
 function defineBehavior<TName extends string>({
   name,
@@ -43,7 +42,7 @@ function defineBehavior<TName extends string>({
     phenotype: Phenotype,
     context: AgentContext,
     actions: EnrichedActionDeciderMap<DefinedActionMap>,
-  ) => DecidedAction<DefinedActionMap>;
+  ) => ActionDecision<DefinedActionMap>;
 }): BehaviorDefinition<TName> {
   return {
     name,

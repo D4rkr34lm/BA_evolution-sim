@@ -1,31 +1,22 @@
-import { buildActionMap } from "../actions/defineAction";
+import { uid } from "uid";
 import { DefinedActionMap, definedActions } from "../actions/definitions";
 import { getAgentPhenotype, Phenotype } from "../genetics/phenotype";
 import { Vec2 } from "../position";
 import { getAgentStrategy, Strategy } from "../strategy";
-import { AgentState } from "./state";
+import { AgentState, getInitialAgentState } from "./state";
+import { buildActionMap } from "../actions/actionMap";
 
 export interface Agent {
+  id: string;
   phenotype: Phenotype;
   strategy: Strategy;
   actionMap: DefinedActionMap;
   state: AgentState;
 }
 
-function getInitialAgentState({
-  position,
-  phenotype,
-}: {
-  position: Vec2;
-  phenotype: Phenotype;
-}): AgentState {
-  return {
-    position,
-    currentEnergy: phenotype.energyCapacity,
-  };
-}
-
 export function spawnAgent({ position }: { position: Vec2 }): Agent {
+  const id = uid();
+
   const phenotype = getAgentPhenotype();
 
   const strategy = getAgentStrategy(phenotype);
@@ -36,6 +27,7 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
   });
 
   return {
+    id,
     phenotype,
     actionMap,
     strategy,

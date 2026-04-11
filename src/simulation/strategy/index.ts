@@ -1,5 +1,5 @@
-import { AgentContext, Phenotype } from "..";
 import { BehaviorName } from "../behavior/defineBehavior";
+import { Phenotype } from "../genetics/phenotype";
 
 export interface StrategyState {
   id: string;
@@ -11,7 +11,7 @@ export interface Strategy {
   states: StrategyState[];
 }
 
-export function getAgentStrategy(phenotype: Phenotype): Strategy {
+export function getAgentStrategy(_: Phenotype): Strategy {
   const initialState: StrategyState = {
     id: "default",
     behaviorToExecute: "defaultTestBehavior",

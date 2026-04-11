@@ -1,3 +1,7 @@
+import {
+  FOOD_BASE_ENERGY_GAIN_FROM_CONSUMPTION,
+  FOOD_RECOVERY_RATE,
+} from "../constants";
 import { Vec2 } from "../position";
 
 export interface FoodSource {
@@ -8,24 +12,11 @@ export interface FoodSource {
   baseEnergyGainFromConsumption: number;
 }
 
-/*
-function spawnFoodSources({
-  worldSize,
-  amount,
-}: {
-  worldSize: Vec2;
-  amount: number;
-}): FoodSource[] {
-  const sourcePositions = getUniqueRandomPositions({
-    amount,
-    max: worldSize,
-  });
-
-  return sourcePositions.map((pos) => ({
-    position: pos,
+export function spawnFoodSource({ position }: { position: Vec2 }): FoodSource {
+  return {
+    position,
     recoveryRate: FOOD_RECOVERY_RATE,
     ticksTillRecovery: 0,
     baseEnergyGainFromConsumption: FOOD_BASE_ENERGY_GAIN_FROM_CONSUMPTION,
-  }));
+  };
 }
-*/

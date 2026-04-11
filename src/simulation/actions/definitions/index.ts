@@ -1,8 +1,9 @@
 import { eatActionDefinition } from "./eat";
 import { moveActionDefinition } from "./move";
 import { reproduceActionDefinition } from "./reproduce";
-import { Action, ActionMap } from "../defineAction";
+import { Action } from "../defineAction";
 import { Phenotype } from "@/simulation/genetics/phenotype";
+import { ActionMap } from "../actionMap";
 
 export const definedActions = [
   moveActionDefinition,
