@@ -76,7 +76,7 @@ function applyAgentContextUpdate(
   };
 }
 
-function runSimulation(simulation: Simulation): Simulation {
+export function runSimulation(simulation: Simulation): Simulation {
   const simulationWithAgentUpdates = simulation.agents.reduce(
     (updatedSimulation, agent) => {
       const context = getAgentContext(agent, simulation);
