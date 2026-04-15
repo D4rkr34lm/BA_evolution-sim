@@ -1,15 +1,17 @@
 import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, query } from "lit/decorators.js";
-import { Application, Container, Sprite } from "pixi.js";
+import { Application, Container, Sprite, TilingSprite } from "pixi.js";
 import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
-import AgentSpriteURL from "./assets/MockAgentSprite.png";
+import { Textures } from "./assets";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
+
+const BASE_TILE_SIZE = 64;
 
 class AgentRenderer {
   root: Container;
@@ -17,7 +19,9 @@ class AgentRenderer {
 
   constructor(agentSnapshot: AgentSnapshot) {
     this.root = new Container();
-    this.bodySprite = Sprite.from(AgentSpriteURL);
+    this.bodySprite = new Sprite({
+      texture: Textures.agent,
+    });
     this.root.addChild(this.bodySprite);
 
     this.update(agentSnapshot);
@@ -39,7 +43,9 @@ export class SimulationStateRender extends LitElementWw {
   accessor canvasContainer!: HTMLDivElement;
 
   app: Application | null = null;
+
   activeRenderedEntities: { [id: string]: AgentRenderer } = {};
+  backgroundTileSprite: TilingSprite | null = null;
 
   private async setupCanvas() {
     const app = new Application();
@@ -52,6 +58,8 @@ export class SimulationStateRender extends LitElementWw {
 
   private renderSimulation(simulationSnapshot: SimulationSnapshot) {
     if (!this.app) return;
+
+    this.app.stage.addChild(backgroundTileSprite);
 
     for (const agentSnapshot of simulationSnapshot.agents) {
       const activeRenderer = this.activeRenderedEntities[agentSnapshot.id];

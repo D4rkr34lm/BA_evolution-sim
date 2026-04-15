@@ -1,6 +1,11 @@
 {
     "name": "@webwriter/evolution-sim",
     "version": "0.0.0",
+    "keywords": [
+        "webwriter-widget"
+    ],
+    "license": "MIT",
+    "author": "Manuel Frohn (D4rkr34lm)",
     "scripts": {
         "prepublishOnly": "@webwriter/build",
         "localize": "lit-localize extract && @webwriter/build localize && lit-localize build",
@@ -39,10 +44,5 @@
             "source": "./src/widgets/webwriter-evolution-sim.ts",
             "default": "./src/dist/widgets/webwriter-evolution-sim.*"
         }
-    },
-    "keywords": [
-        "webwriter-widget"
-    ],
-    "license": "MIT",
-    "author": "Manuel Frohn (D4rkr34lm)"
+    }
 }
