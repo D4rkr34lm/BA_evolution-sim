@@ -44,7 +44,7 @@ export class SimulationStateRender extends LitElementWw {
   private async setupCanvas() {
     const app = new Application();
 
-    await app.init({ resizeTo: this.canvasContainer });
+    await app.init({ resizeTo: this.canvasContainer, background: "#FFFFFF" });
     this.canvasContainer.appendChild(app.canvas);
 
     this.app = app;
@@ -87,8 +87,8 @@ export class SimulationStateRender extends LitElementWw {
     return html` <div id="simulation-container"></div> `;
   }
 
-  firstUpdated() {
-    this.setupCanvas();
+  async firstUpdated() {
+    await this.setupCanvas();
 
     // TODO remove
     setTimeout(() => {
