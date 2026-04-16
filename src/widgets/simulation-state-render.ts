@@ -5,6 +5,8 @@ import { Application, Container, Sprite, TilingSprite } from "pixi.js";
 import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
+import { SIMULATION_WORLD_SIZE } from "@/simulation/constants";
+import { SimulationMetadata } from "@/simulation/running";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -12,6 +14,24 @@ import {msg} from '@lit/localize'
 */
 
 const BASE_TILE_SIZE = 64;
+
+class SimulationRenderer {
+  root: Container;
+
+  constructor(simulationMetadata: SimulationMetadata) {
+    const { worldSize } = simulationMetadata;
+
+    this.root = new Container();
+
+    const backgroundSprite = new TilingSprite({
+      texture: Textures.backgroundTile,
+      width: BASE_TILE_SIZE * worldSize.x,
+      height: BASE_TILE_SIZE * worldSize.y,
+    });
+
+    this.root.addChild(backgroundSprite);
+  }
+}
 
 class AgentRenderer {
   root: Container;
@@ -59,7 +79,11 @@ export class SimulationStateRender extends LitElementWw {
   private renderSimulation(simulationSnapshot: SimulationSnapshot) {
     if (!this.app) return;
 
-    this.app.stage.addChild(backgroundTileSprite);
+    const backgroundSprite = new TilingSprite({
+      texture: Textures.backgroundTile,
+      width: BASE_TILE_SIZE * SIMULATION_WORLD_SIZE.x,
+      height: BASE_TILE_SIZE * SIMULATION_WORLD_SIZE.y,
+    });
 
     for (const agentSnapshot of simulationSnapshot.agents) {
       const activeRenderer = this.activeRenderedEntities[agentSnapshot.id];

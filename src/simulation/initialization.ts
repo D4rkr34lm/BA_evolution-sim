@@ -53,6 +53,9 @@ export function initializeSimulation({
   });
 
   return {
+    metadata: {
+      worldSize,
+    },
     agents,
     foodSources,
   };
