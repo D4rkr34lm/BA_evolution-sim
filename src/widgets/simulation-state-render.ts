@@ -2,11 +2,7 @@ import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, query } from "lit/decorators.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
-import {
-  AgentSnapshot,
-  FoodSourceSnapshot,
-  SimulationSnapshot,
-} from "@/simulation/serialization";
+import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
