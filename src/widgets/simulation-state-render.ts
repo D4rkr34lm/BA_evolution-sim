@@ -2,11 +2,17 @@ import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, query } from "lit/decorators.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
-import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
+import {
+  AgentSnapshot,
+  FoodSourceSnapshot,
+  SimulationSnapshot,
+} from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
-import { SIMULATION_WORLD_SIZE } from "@/simulation/constants";
 import { SimulationMetadata } from "@/simulation/running";
+import { Vec2 } from "@/simulation/position";
+import { useSimulationStore } from "@/composables/simulationStore";
+import { effect } from "signal-utils/subtle/microtask-effect";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -14,33 +20,43 @@ import {msg} from '@lit/localize'
 */
 
 const BASE_TILE_SIZE = 64;
+class BackgroundRenderer {
+  readonly root: Container;
+  readonly backgroundTilesSprite: TilingSprite;
 
-class SimulationRenderer {
-  root: Container;
+  constructor() {
+    const tileScale: Vec2 = {
+      x: BASE_TILE_SIZE / Textures.backgroundTile.width,
+      y: BASE_TILE_SIZE / Textures.backgroundTile.height,
+    };
 
-  constructor(simulationMetadata: SimulationMetadata) {
-    const { worldSize } = simulationMetadata;
-
-    this.root = new Container();
-
-    const backgroundSprite = new TilingSprite({
+    this.backgroundTilesSprite = new TilingSprite({
       texture: Textures.backgroundTile,
-      width: BASE_TILE_SIZE * worldSize.x,
-      height: BASE_TILE_SIZE * worldSize.y,
+      tileScale,
     });
 
-    this.root.addChild(backgroundSprite);
+    this.root = new Container();
+  }
+
+  update(worldSize: Vec2) {
+    const backgroundTileSize = {
+      width: BASE_TILE_SIZE * worldSize.x,
+      height: BASE_TILE_SIZE * worldSize.y,
+    };
+
+    this.backgroundTilesSprite.setSize(backgroundTileSize);
   }
 }
-
 class AgentRenderer {
-  root: Container;
-  bodySprite: Sprite;
+  readonly root: Container;
+  readonly bodySprite: Sprite;
 
   constructor(agentSnapshot: AgentSnapshot) {
     this.root = new Container();
     this.bodySprite = new Sprite({
       texture: Textures.agent,
+      width: BASE_TILE_SIZE,
+      height: BASE_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
 
@@ -53,19 +69,67 @@ class AgentRenderer {
   }
 }
 
+function useSimulationRenderer() {
+  const rootContainer = new Container();
+  const backgroundRenderer = new BackgroundRenderer();
+  const agentRendererCache = new Map<string, AgentRenderer>();
+
+  rootContainer.addChild(backgroundRenderer.root);
+
+  function updateAgents(snapshots: AgentSnapshot[]) {
+    // Remove agents no longer existent
+    const oldAgentIds = [...agentRendererCache.keys()];
+    const newAgentIds = new Set(snapshots.map((sp) => sp.id));
+    const removedAgents = oldAgentIds
+      .filter((id) => !newAgentIds.has(id))
+      .map((id) => agentRendererCache.get(id))
+      .filter(hasValue);
+
+    for (const removedAgent of removedAgents) {
+      rootContainer.removeChild(removedAgent.root);
+    }
+
+    // Create or update agent renderers
+    for (const snapshot of snapshots) {
+      const cachedRenderer = agentRendererCache.get(snapshot.id);
+
+      if (hasValue(cachedRenderer)) {
+        cachedRenderer.update(snapshot);
+      } else {
+        const newRenderer = new AgentRenderer(snapshot);
+        agentRendererCache.set(snapshot.id, newRenderer);
+      }
+    }
+  }
+
+  function update(
+    metadata: SimulationMetadata,
+    snapshot: SimulationSnapshot | null,
+  ) {
+    backgroundRenderer.update(metadata.worldSize);
+
+    updateAgents(snapshot?.agents ?? []);
+  }
+
+  return {
+    root: rootContainer,
+    update,
+  };
+}
+
 @customElement("simulation-state-render")
 export class SimulationStateRender extends LitElementWw {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
 
+  simulationStore = useSimulationStore();
+
   @query("#simulation-container")
   accessor canvasContainer!: HTMLDivElement;
 
   app: Application | null = null;
-
-  activeRenderedEntities: { [id: string]: AgentRenderer } = {};
-  backgroundTileSprite: TilingSprite | null = null;
+  renderer = useSimulationRenderer();
 
   private async setupCanvas() {
     const app = new Application();
@@ -74,28 +138,6 @@ export class SimulationStateRender extends LitElementWw {
     this.canvasContainer.appendChild(app.canvas);
 
     this.app = app;
-  }
-
-  private renderSimulation(simulationSnapshot: SimulationSnapshot) {
-    if (!this.app) return;
-
-    const backgroundSprite = new TilingSprite({
-      texture: Textures.backgroundTile,
-      width: BASE_TILE_SIZE * SIMULATION_WORLD_SIZE.x,
-      height: BASE_TILE_SIZE * SIMULATION_WORLD_SIZE.y,
-    });
-
-    for (const agentSnapshot of simulationSnapshot.agents) {
-      const activeRenderer = this.activeRenderedEntities[agentSnapshot.id];
-
-      if (hasValue(activeRenderer)) {
-        activeRenderer.update(agentSnapshot);
-      } else {
-        const newRenderer = new AgentRenderer(agentSnapshot);
-        this.activeRenderedEntities[agentSnapshot.id] = newRenderer;
-        this.app.stage.addChild(newRenderer.root);
-      }
-    }
   }
 
   /** Register the classes of custom elements to use in the Shadow DOM here.
@@ -122,28 +164,12 @@ export class SimulationStateRender extends LitElementWw {
   async firstUpdated() {
     await this.setupCanvas();
 
-    // TODO remove
-    setTimeout(() => {
-      this.renderSimulation({
-        tick: 0,
-        agents: [
-          {
-            id: "agent1",
-            state: {
-              position: { x: 100, y: 100 },
-              currentEnergy: 50,
-            },
-          },
-          {
-            id: "agent2",
-            state: {
-              position: { x: 200, y: 150 },
-              currentEnergy: 80,
-            },
-          },
-        ],
-        foodSources: [],
-      });
-    }, 1000);
+    effect(() => {
+      const store = this.simulationStore.get();
+
+      if (store.isInitialized) {
+        this.renderer.update(store.metadata, store.activeSnapshot);
+      }
+    });
   }
 }

@@ -22,7 +22,7 @@ function recordFoodSourceSnapshot(foodSource: FoodSource): FoodSourceSnapshot {
   };
 }
 
-interface FoodSourceSnapshot {
+export interface FoodSourceSnapshot {
   position: Vec2;
 }
 
