@@ -187,6 +187,8 @@ export class SimulationStateRender extends LitElementWw {
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
+
     this.app?.destroy();
     this.unwatch?.();
   }
