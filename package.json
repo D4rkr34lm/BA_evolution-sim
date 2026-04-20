@@ -1,6 +1,11 @@
 {
     "name": "@webwriter/evolution-sim",
     "version": "0.0.0",
+    "keywords": [
+        "webwriter-widget"
+    ],
+    "license": "MIT",
+    "author": "Manuel Frohn (D4rkr34lm)",
     "scripts": {
         "prepublishOnly": "@webwriter/build",
         "localize": "lit-localize extract && @webwriter/build localize && lit-localize build",
@@ -8,11 +13,14 @@
         "test": "vitest"
     },
     "dependencies": {
+        "@lit-labs/signals": "^0.2.0",
         "@webwriter/lit": "^2.0.0",
+        "comlink": "^4.4.2",
         "lit": "^3.0.0",
         "lodash-es": "^4.17.23",
         "neverthrow": "^8.2.0",
         "pixi.js": "^8.17.1",
+        "signal-utils": "^0.21.1",
         "uid": "^2.0.2"
     },
     "devDependencies": {
@@ -39,10 +47,5 @@
             "source": "./src/widgets/webwriter-evolution-sim.ts",
             "default": "./src/dist/widgets/webwriter-evolution-sim.*"
         }
-    },
-    "keywords": [
-        "webwriter-widget"
-    ],
-    "license": "MIT",
-    "author": "Manuel Frohn (D4rkr34lm)"
+    }
 }

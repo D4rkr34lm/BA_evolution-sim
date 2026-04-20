@@ -4,10 +4,16 @@ import { FoodSource } from "./foodSource";
 import { Agent } from "./agent/agent";
 import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
+import { Vec2 } from "./position";
 
 export interface Simulation {
+  metadata: SimulationMetadata;
   foodSources: FoodSource[];
   agents: Agent[];
+}
+
+export interface SimulationMetadata {
+  worldSize: Vec2;
 }
 
 function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
