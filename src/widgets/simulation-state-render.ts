@@ -141,6 +141,7 @@ export class SimulationStateRender extends LitElementWw {
 
   app: Application | null = null;
   renderer = useSimulationRenderer();
+  unwatch: (() => void) | null = null;
 
   private async setupCanvas() {
     const app = new Application();
@@ -176,12 +177,17 @@ export class SimulationStateRender extends LitElementWw {
   async firstUpdated() {
     await this.setupCanvas();
 
-    effect(() => {
+    this.unwatch = effect(() => {
       const data = this.simulationStore.currentActiveSimulationData.get();
 
       if (hasValue(data)) {
         this.renderer.update(data.metadata, data.snapshot);
       }
     });
+  }
+
+  disconnectedCallback() {
+    this.app?.destroy();
+    this.unwatch?.();
   }
 }
