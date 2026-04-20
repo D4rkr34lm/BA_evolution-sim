@@ -1,18 +1,24 @@
 import { hasNoValue } from "@/utils/typeGuards";
-import { runSimulation, Simulation } from "./running";
+import { runSimulation, Simulation, SimulationMetadata } from "./running";
 import { recordSimulationSnapshot, SimulationSnapshot } from "./serialization";
 import { initializeSimulation } from "./initialization";
 import { Vec2 } from "./position";
+import * as Comlink from "comlink";
 
-interface SimulationRunner {
+export interface SimulationInitOptions {
+  worldSize: Vec2;
+  initialAgentsAmount: number;
+  initialFoodSourcesAmount: number;
+}
+
+export interface SimulationRunner {
   currentTick: number;
   activeSimulation: Simulation | null;
   runTick: () => SimulationSnapshot;
-  initializeNewSimulation: (simulationParameters: {
-    worldSize: Vec2;
-    initialAgentsAmount: number;
-    initialFoodSourcesAmount: number;
-  }) => SimulationSnapshot;
+  initializeNewSimulation: (simulationParameters: SimulationInitOptions) => {
+    metadata: SimulationMetadata;
+    initialSnapshot: SimulationSnapshot;
+  };
 }
 
 export const SimulationRunner: SimulationRunner = {
@@ -41,6 +47,14 @@ export const SimulationRunner: SimulationRunner = {
     const newSimulation = initializeSimulation(parameters);
     this.activeSimulation = newSimulation;
     this.currentTick = 0;
-    return recordSimulationSnapshot(this.currentTick, newSimulation);
+    return {
+      metadata: newSimulation.metadata,
+      initialSnapshot: recordSimulationSnapshot(
+        this.currentTick,
+        newSimulation,
+      ),
+    };
   },
 };
+
+Comlink.expose(SimulationRunner);

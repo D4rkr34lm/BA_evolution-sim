@@ -1,56 +1,53 @@
 import { SimulationMetadata } from "@/simulation/running";
 import { SimulationSnapshot } from "@/simulation/serialization";
-import { hasNoValue, hasValue } from "@/utils/typeGuards";
-import { computed, Signal, signal } from "@lit-labs/signals";
-import { signalArray } from "signal-utils/array";
+import { computed, signal } from "@lit-labs/signals";
+import * as Comlink from "comlink";
 
-interface UninitializedSinuationStore {
-  isInitialized: false;
-}
+import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
+import type {
+  SimulationRunner,
+  SimulationInitOptions,
+} from "../simulation/Simulation.worker";
+import { hasValue } from "@/utils/typeGuards";
 
-interface InitializedSimulationStore {
-  isInitialized: true;
-  metadata: SimulationMetadata;
-  snapshots: SimulationSnapshot[];
-  activeSnapshot: SimulationSnapshot | null;
-  setActiveSnapshot: (index: number) => void;
-}
-
-type SimulationStore = UninitializedSinuationStore | InitializedSimulationStore;
-
-let storeSingleton: Signal.Computed<SimulationStore> | null = null;
+const SimulationWorker = Comlink.wrap<SimulationRunner>(
+  new Worker(URL.createObjectURL(new Blob([SimulationWorkerRaw]))),
+);
 
 export function useSimulationStore() {
-  if (hasValue(storeSingleton)) {
-    return storeSingleton;
+  const simulationMetadata = signal<SimulationMetadata | null>(null);
+  const currentSnapshot = signal<SimulationSnapshot | null>(null);
+
+  async function initializeNewSimulation(options: SimulationInitOptions) {
+    const initResult = await SimulationWorker.initializeNewSimulation(options);
+
+    simulationMetadata.set(initResult.metadata);
+    currentSnapshot.set(initResult.initialSnapshot);
   }
 
-  const metadata = signal<SimulationMetadata | null>(null);
-  const snapshots = signalArray<SimulationSnapshot>([]);
+  async function runNextTick() {
+    const tickResult = await SimulationWorker.runTick();
 
-  const activeSnapshotIndex = signal(-1);
+    currentSnapshot.set(tickResult);
+  }
 
-  const setActiveSnapshot = (index: number) => activeSnapshotIndex.set(index);
+  const currentActiveSimulationData = computed(() => {
+    const metadata = simulationMetadata.get();
+    const snapshot = currentSnapshot.get();
 
-  const store = computed<SimulationStore>(() => {
-    const activeMetadata = metadata.get();
-
-    if (hasNoValue(activeMetadata)) {
+    if (hasValue(metadata) && hasValue(snapshot)) {
       return {
-        isInitialized: false,
+        metadata,
+        snapshot,
       };
     } else {
-      return {
-        isInitialized: true,
-        metadata: activeMetadata,
-        snapshots: snapshots,
-        activeSnapshot: snapshots.at(activeSnapshotIndex.get()) ?? null,
-        setActiveSnapshot,
-      };
+      return null;
     }
   });
 
-  storeSingleton = store;
-
-  return store;
+  return {
+    initializeNewSimulation,
+    runNextTick,
+    currentActiveSimulationData,
+  };
 }

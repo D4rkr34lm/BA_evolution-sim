@@ -36,6 +36,9 @@
       ]
     },
     "typescript.tsdk": "./node_modules/typescript/lib",
+    "cSpell.words": [
+      "Comlink"
+    ],
   },
   "extensions": {
     "recommendations": [

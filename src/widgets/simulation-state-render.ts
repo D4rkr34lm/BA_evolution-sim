@@ -6,7 +6,7 @@ import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
-import { Vec2 } from "@/simulation/position";
+import { scaleVector, Vec2 } from "@/simulation/position";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { effect } from "signal-utils/subtle/microtask-effect";
 
@@ -16,6 +16,11 @@ import {msg} from '@lit/localize'
 */
 
 const BASE_TILE_SIZE = 64;
+
+function toTilePosition(vec: Vec2): Vec2 {
+  return scaleVector(vec, BASE_TILE_SIZE);
+}
+
 class BackgroundRenderer {
   readonly root: Container;
   readonly backgroundTilesSprite: TilingSprite;
@@ -32,6 +37,8 @@ class BackgroundRenderer {
     });
 
     this.root = new Container();
+
+    this.root.addChild(this.backgroundTilesSprite);
   }
 
   update(worldSize: Vec2) {
@@ -60,8 +67,10 @@ class AgentRenderer {
   }
 
   update(agentSnapshot: AgentSnapshot) {
-    this.bodySprite.x = agentSnapshot.state.position.x;
-    this.bodySprite.y = agentSnapshot.state.position.y;
+    const tilePosition = toTilePosition(agentSnapshot.state.position);
+
+    this.bodySprite.x = tilePosition.x;
+    this.bodySprite.y = tilePosition.y;
   }
 }
 
@@ -76,12 +85,17 @@ function useSimulationRenderer() {
     // Remove agents no longer existent
     const oldAgentIds = [...agentRendererCache.keys()];
     const newAgentIds = new Set(snapshots.map((sp) => sp.id));
-    const removedAgents = oldAgentIds
-      .filter((id) => !newAgentIds.has(id))
+
+    const removedAgentIds = oldAgentIds.filter((id) => !newAgentIds.has(id));
+    const agentRendersToRemove = removedAgentIds
       .map((id) => agentRendererCache.get(id))
       .filter(hasValue);
 
-    for (const removedAgent of removedAgents) {
+    removedAgentIds.forEach((removedId) =>
+      agentRendererCache.delete(removedId),
+    );
+
+    for (const removedAgent of agentRendersToRemove) {
       rootContainer.removeChild(removedAgent.root);
     }
 
@@ -94,6 +108,7 @@ function useSimulationRenderer() {
       } else {
         const newRenderer = new AgentRenderer(snapshot);
         agentRendererCache.set(snapshot.id, newRenderer);
+        rootContainer.addChild(newRenderer.root);
       }
     }
   }
@@ -134,6 +149,7 @@ export class SimulationStateRender extends LitElementWw {
     this.canvasContainer.appendChild(app.canvas);
 
     this.app = app;
+    app.stage.addChild(this.renderer.root);
   }
 
   /** Register the classes of custom elements to use in the Shadow DOM here.
@@ -161,10 +177,10 @@ export class SimulationStateRender extends LitElementWw {
     await this.setupCanvas();
 
     effect(() => {
-      const store = this.simulationStore.get();
+      const data = this.simulationStore.currentActiveSimulationData.get();
 
-      if (store.isInitialized) {
-        this.renderer.update(store.metadata, store.activeSnapshot);
+      if (hasValue(data)) {
+        this.renderer.update(data.metadata, data.snapshot);
       }
     });
   }
