@@ -1,11 +1,12 @@
-import { html, css } from "lit";
+import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
 import { SimulationRunView } from "./simulation-run-view";
-import { SignalWatcher } from "@lit-labs/signals";
+import { SignalWatcher, html } from "@lit-labs/signals";
 import { hasValue } from "@/utils/typeGuards";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { when } from "lit/directives/when.js";
+import { SimulationConfigurationView } from "./simulation-configuration-view";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -28,6 +29,7 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
    **/
   static scopedElements = {
     "simulation-run-view": SimulationRunView,
+    "simulation-configuration-view": SimulationConfigurationView,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -46,10 +48,7 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
           hasValue(this.simulationStore.currentActiveSimulationData.get()),
           () => html` <simulation-run-view></simulation-run-view> `,
           () => html`
-            <span>
-              No active simulation. Please create or load a simulation to get
-              started.
-            </span>
+            <simulation-configuration-view></simulation-configuration-view>
           `,
         )}
       </div>
