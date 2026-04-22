@@ -1,8 +1,10 @@
-import { html, css } from "lit";
+import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
 import { useSimulationStore } from "@/composables/simulationStore";
-import { SlButton } from "@shoelace-style/shoelace";
+import { SlButtonGroup, SlButton, SlIcon } from "@shoelace-style/shoelace";
+import { when } from "lit/directives/when.js";
+import { SignalWatcher, html } from "@lit-labs/signals";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -10,7 +12,7 @@ import {msg} from '@lit/localize'
 */
 
 @customElement("simulation-controls-bar")
-export class SimulationControlsBar extends LitElementWw {
+export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
@@ -24,7 +26,9 @@ export class SimulationControlsBar extends LitElementWw {
    *   static scopedElements = {"sl-button": SlButton}
    **/
   static scopedElements = {
+    "sl-button-group": SlButtonGroup,
     "sl-button": SlButton,
+    "sl-icon": SlIcon,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -39,7 +43,27 @@ export class SimulationControlsBar extends LitElementWw {
   render() {
     return html`
       <div id="controls-container">
-        <sl-button variant="default"> Start </sl-button>
+        <sl-button-group>
+          ${when(
+            this.simulationStore.isRunning.get(),
+            () => html`
+              <sl-button>
+                <sl-icon name="pause"></sl-icon>
+                Pause
+              </sl-button>
+            `,
+            () => html`
+              <sl-button>
+                <sl-icon name="play"></sl-icon>
+                Start
+              </sl-button>
+            `,
+          )}
+          <sl-button>
+            <sl-icon name="arrow-clockwise"></sl-icon>
+            Reset
+          </sl-button>
+        </sl-button-group>
       </div>
     `;
   }

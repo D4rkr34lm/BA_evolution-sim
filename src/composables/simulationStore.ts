@@ -18,6 +18,8 @@ export function useSimulationStore() {
   const simulationMetadata = signal<SimulationMetadata | null>(null);
   const currentSnapshot = signal<SimulationSnapshot | null>(null);
 
+  const isRunning = signal(false);
+
   async function initializeNewSimulation(options: SimulationInitOptions) {
     const initResult = await SimulationWorker.initializeNewSimulation(options);
 
@@ -49,5 +51,6 @@ export function useSimulationStore() {
     initializeNewSimulation,
     runNextTick,
     currentActiveSimulationData,
+    isRunning,
   };
 }
