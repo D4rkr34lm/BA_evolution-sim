@@ -4,7 +4,7 @@ import { computed, signal } from "@lit-labs/signals";
 import * as Comlink from "comlink";
 
 import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
-import type {
+import {
   SimulationRunner,
   SimulationInitOptions,
 } from "../simulation/Simulation.worker";
@@ -21,6 +21,8 @@ export function useSimulationStore() {
   const isRunning = signal(false);
 
   async function initializeNewSimulation(options: SimulationInitOptions) {
+    console.log("DEV - initialized new simulation with options", options);
+
     const initResult = await SimulationWorker.initializeNewSimulation(options);
 
     simulationMetadata.set(initResult.metadata);
@@ -47,9 +49,25 @@ export function useSimulationStore() {
     }
   });
 
+  async function startSimulation() {
+    isRunning.set(true);
+    await SimulationWorker.startSimulation(
+      Comlink.proxy((snapshot) => {
+        currentSnapshot.set(snapshot);
+      }),
+    );
+  }
+
+  async function stopSimulation() {
+    isRunning.set(false);
+    await SimulationWorker.stopSimulation();
+  }
+
   return {
     initializeNewSimulation,
     runNextTick,
+    startSimulation,
+    stopSimulation,
     currentActiveSimulationData,
     isRunning,
   };

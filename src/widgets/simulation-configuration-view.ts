@@ -64,24 +64,26 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
         <div class="flex-row">
           <sl-input
             label="World Width"
-            .value="${this.from.formValue.worldSize.x}"
+            .value="${this.from.formValue.get().worldSize.x}"
           ></sl-input>
           <sl-input
             label="World Height"
-            .value="${this.from.formValue.worldSize.y}"
+            .value="${this.from.formValue.get().worldSize.y}"
           ></sl-input>
         </div>
         <sl-input
           label="Initial Agents Amount"
-          .value="${this.from.formValue.initialAgentsAmount}"
+          .value="${this.from.formValue.get().initialAgentsAmount}"
         ></sl-input>
         <sl-input
           label="Initial Food Sources Amount"
-          .value="${this.from.formValue.initialFoodSourcesAmount}"
+          .value="${this.from.formValue.get().initialFoodSourcesAmount}"
         ></sl-input>
         <sl-button
           @click="${() =>
-            this.simulationStore.initializeNewSimulation(this.from.formValue)}"
+            this.simulationStore.initializeNewSimulation(
+              this.from.formValue.get(),
+            )}"
         >
           Start simulation
         </sl-button>

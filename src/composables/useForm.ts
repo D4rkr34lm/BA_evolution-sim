@@ -1,22 +1,20 @@
-import { computed, signal } from "@lit-labs/signals";
-import { isEqual } from "lodash-es";
-import { signalObject } from "signal-utils/object";
+import { signal } from "@lit-labs/signals";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useForm<T extends Record<string | number | symbol, any>>(
   initialValues: T,
 ) {
-  const initialValue = signal(initialValues);
-  const formValue = signalObject(initialValues);
+  const formValue = signal(initialValues);
 
-  const isDirty = computed(() => {
-    const initial = initialValue.get();
+  function updateFormValue(updater: (old: T) => T) {
+    const curr = formValue.get();
+    const newData = updater(curr);
 
-    return !isEqual(initial, formValue);
-  });
+    formValue.set(newData);
+  }
 
   return {
     formValue,
-    isDirty,
+    updateFormValue,
   };
 }

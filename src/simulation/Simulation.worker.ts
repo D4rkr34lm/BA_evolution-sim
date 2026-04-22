@@ -30,11 +30,18 @@ export interface SimulationRunner {
 
 const TICK_INTERVAL = 100;
 
+console.log("DEV - SimulationWorker module loaded");
+
 export const SimulationRunner: SimulationRunner = {
   currentTick: -1,
   activeSimulation: null,
   simulationRunning: false,
   initializeNewSimulation(parameters) {
+    console.log(
+      "DEV - initializeNewSimulation called with parameters",
+      parameters,
+    );
+
     const newSimulation = initializeSimulation(parameters);
     this.activeSimulation = newSimulation;
     this.currentTick = 0;

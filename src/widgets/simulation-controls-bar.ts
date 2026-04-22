@@ -48,21 +48,29 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
             this.simulationStore.isRunning.get(),
             () => html`
               <sl-button>
-                <sl-icon name="pause"></sl-icon>
+                <sl-icon
+                  name="pause"
+                  @click=${() => this.simulationStore.stopSimulation()}
+                ></sl-icon>
                 Pause
               </sl-button>
             `,
             () => html`
               <sl-button>
-                <sl-icon name="play"></sl-icon>
+                <sl-icon
+                  name="play"
+                  @click=${() => this.simulationStore.startSimulation()}
+                ></sl-icon>
                 Start
               </sl-button>
             `,
           )}
+          <!-- TODO implement reset / perhaps only after seeding mechanism ?
           <sl-button>
             <sl-icon name="arrow-clockwise"></sl-icon>
             Reset
           </sl-button>
+        -->
         </sl-button-group>
       </div>
     `;
