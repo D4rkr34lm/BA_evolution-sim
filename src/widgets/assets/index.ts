@@ -1,9 +1,17 @@
 import { Texture } from "pixi.js";
 
-import AgentSpriteURL from "./assets/MockAgentSprite.png";
-import BackgroundTileURL from "./assets/MockBackgroundTile.png";
+import AgentSpriteData from "./MockAgentSprite.png";
+import BackgroundTileData from "./MockBackgroundTile.png";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toTexture(data: any): Texture {
+  const image = new Image();
+  image.src = data;
+
+  return Texture.from(image);
+}
 
 export const Textures = {
-  agent: Texture.from(AgentSpriteURL),
-  backgroundTile: Texture.from(BackgroundTileURL),
+  agent: toTexture(AgentSpriteData),
+  backgroundTile: toTexture(BackgroundTileData),
 };
