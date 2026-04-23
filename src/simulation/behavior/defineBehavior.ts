@@ -57,9 +57,15 @@ const defaultTestBehavior = defineBehavior({
 
     if (moveDecisionResult.isOk()) {
       return moveDecisionResult.value;
-    } else {
-      throw new Error("TODO implement more / fallback / noop action");
     }
+
+    const noopDecisionResult = actions.noop.canExecute();
+
+    if (noopDecisionResult.isOk()) {
+      return noopDecisionResult.value;
+    }
+
+    throw new Error("Unreachable Path");
   },
 });
 
