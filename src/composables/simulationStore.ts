@@ -23,55 +23,54 @@ const SimulationWorker = Comlink.wrap<SimulationRunner>(
   ),
 );
 
+const simulationMetadata = signal<SimulationMetadata | null>(null);
+const currentSnapshot = signal<SimulationSnapshot | null>(null);
+const isRunning = signal(false);
+
+const currentActiveSimulationData = computed(() => {
+  const metadata = simulationMetadata.get();
+  const snapshot = currentSnapshot.get();
+
+  if (hasValue(metadata) && hasValue(snapshot)) {
+    return {
+      metadata,
+      snapshot,
+    };
+  } else {
+    return null;
+  }
+});
+
+async function initializeNewSimulation(options: SimulationInitOptions) {
+  console.log("DEV - initialized new simulation with options", options);
+
+  const initResult = await SimulationWorker.initializeNewSimulation(options);
+
+  simulationMetadata.set(initResult.metadata);
+  currentSnapshot.set(initResult.initialSnapshot);
+}
+
+async function runNextTick() {
+  const tickResult = await SimulationWorker.runTick();
+
+  currentSnapshot.set(tickResult);
+}
+
+async function startSimulation() {
+  isRunning.set(true);
+  await SimulationWorker.startSimulation(
+    Comlink.proxy((snapshot) => {
+      currentSnapshot.set(snapshot);
+    }),
+  );
+}
+
+async function stopSimulation() {
+  isRunning.set(false);
+  await SimulationWorker.stopSimulation();
+}
+
 export function useSimulationStore() {
-  const simulationMetadata = signal<SimulationMetadata | null>(null);
-  const currentSnapshot = signal<SimulationSnapshot | null>(null);
-
-  const isRunning = signal(false);
-
-  async function initializeNewSimulation(options: SimulationInitOptions) {
-    console.log("DEV - initialized new simulation with options", options);
-
-    const initResult = await SimulationWorker.initializeNewSimulation(options);
-
-    simulationMetadata.set(initResult.metadata);
-    currentSnapshot.set(initResult.initialSnapshot);
-  }
-
-  async function runNextTick() {
-    const tickResult = await SimulationWorker.runTick();
-
-    currentSnapshot.set(tickResult);
-  }
-
-  const currentActiveSimulationData = computed(() => {
-    const metadata = simulationMetadata.get();
-    const snapshot = currentSnapshot.get();
-
-    if (hasValue(metadata) && hasValue(snapshot)) {
-      return {
-        metadata,
-        snapshot,
-      };
-    } else {
-      return null;
-    }
-  });
-
-  async function startSimulation() {
-    isRunning.set(true);
-    await SimulationWorker.startSimulation(
-      Comlink.proxy((snapshot) => {
-        currentSnapshot.set(snapshot);
-      }),
-    );
-  }
-
-  async function stopSimulation() {
-    isRunning.set(false);
-    await SimulationWorker.stopSimulation();
-  }
-
   return {
     initializeNewSimulation,
     runNextTick,
