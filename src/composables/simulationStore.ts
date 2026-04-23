@@ -11,7 +11,16 @@ import {
 import { hasValue } from "@/utils/typeGuards";
 
 const SimulationWorker = Comlink.wrap<SimulationRunner>(
-  new Worker(URL.createObjectURL(new Blob([SimulationWorkerRaw]))),
+  new Worker(
+    URL.createObjectURL(
+      new Blob([SimulationWorkerRaw], {
+        type: "application/javascript",
+      }),
+    ),
+    {
+      type: "module",
+    },
+  ),
 );
 
 export function useSimulationStore() {
