@@ -1,5 +1,6 @@
 export const ACTION_ERRORS = {
   ERR_NOT_ENOUGH_ENERGY: "not-enough-energy",
+  ERR_OUT_OF_BOUNDS: "out-of-bounds",
   ERR_NOT_IN_RANGE: "not-in-range",
 } as const;
 

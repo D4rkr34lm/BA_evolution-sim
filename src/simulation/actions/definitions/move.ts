@@ -1,4 +1,9 @@
-import { Direction, addVectors } from "@/simulation/position";
+import {
+  Direction,
+  VEC_0,
+  addVectors,
+  compareVectors,
+} from "@/simulation/position";
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
 import { defineAction } from "../defineAction";
@@ -6,7 +11,7 @@ import { defineAction } from "../defineAction";
 export const moveActionDefinition = defineAction({
   name: "move",
   buildAction: ({ moveCost }) => {
-    return ({ me }, direction: Direction) => {
+    return ({ me, worldSize }, direction: Direction) => {
       const newEnergy = me.currentEnergy - moveCost;
 
       if (newEnergy < 0) {
@@ -20,15 +25,22 @@ export const moveActionDefinition = defineAction({
           newPosition,
         );
 
-        const changedAgent = {
-          ...me,
-          position: newPosition,
-          currentEnergy: newEnergy,
-        };
+        if (
+          compareVectors(newPosition, ">=", VEC_0) &&
+          compareVectors(newPosition, "<=", worldSize)
+        ) {
+          const changedAgent = {
+            ...me,
+            position: newPosition,
+            currentEnergy: newEnergy,
+          };
 
-        return ok({
-          me: changedAgent,
-        });
+          return ok({
+            me: changedAgent,
+          });
+        } else {
+          return err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS);
+        }
       }
     };
   },

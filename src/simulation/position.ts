@@ -16,6 +16,8 @@ export const Directions = {
 
 export type Direction = (typeof Directions)[keyof typeof Directions];
 
+export const VEC_0 = { x: 0, y: 0 };
+
 export function addVectors(a: Vec2, b: Vec2): Vec2 {
   return {
     x: a.x + b.x,
@@ -28,6 +30,31 @@ export function scaleVector(vec: Vec2, factor: number): Vec2 {
     x: vec.x * factor,
     y: vec.y * factor,
   };
+}
+
+type ComparatorOperation = ">" | "<" | ">=" | "<=" | "=" | "!=";
+
+export function compareVectors(
+  a: Vec2,
+  operation: ComparatorOperation,
+  b: Vec2,
+): boolean {
+  switch (operation) {
+    case ">":
+      return a.x > b.x && a.y > b.y;
+    case "<":
+      return a.x < b.x && a.y < b.y;
+    case ">=":
+      return a.x >= b.x && a.y >= b.y;
+    case "<=":
+      return a.x <= b.x && a.y <= b.y;
+    case "=":
+      return a.x === b.x && a.y === b.y;
+    case "!=":
+      return a.x !== b.x || a.y !== b.y;
+    default:
+      throw new Error(`Invalid comparator operation: ${operation}`);
+  }
 }
 
 export function getUniqueRandomPositions({

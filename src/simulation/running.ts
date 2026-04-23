@@ -19,6 +19,7 @@ export interface SimulationMetadata {
 function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
   return {
     me: agent.state,
+    worldSize: simulation.metadata.worldSize,
     otherAgents: simulation.agents.filter((otherAgent) => otherAgent !== agent),
     foodSources: simulation.foodSources,
   };
