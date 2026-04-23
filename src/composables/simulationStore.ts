@@ -61,6 +61,7 @@ async function startSimulation() {
   console.log("DEV - starting simulation through store");
   await SimulationWorker.startSimulation(
     Comlink.proxy((snapshot) => {
+      console.log("DEV - received tick result from worker", snapshot);
       currentSnapshot.set(snapshot);
     }),
   );

@@ -15,7 +15,7 @@ import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
 
-const BASE_TILE_SIZE = 64;
+const BASE_TILE_SIZE = 16;
 
 function toTilePosition(vec: Vec2): Vec2 {
   return scaleVector(vec, BASE_TILE_SIZE);

@@ -36,6 +36,11 @@ function runAgent(agent: Agent, context: AgentContext): AgentContext {
     deciderMap,
   );
 
+  console.log(
+    `DEV - agent ${agent.id} decided to execute action ${actionDecision.name}`,
+    actionDecision,
+  );
+
   const actionToRun = agent.actionMap[actionDecision.name];
 
   const actionExecutionResult = actionToRun.execute(
