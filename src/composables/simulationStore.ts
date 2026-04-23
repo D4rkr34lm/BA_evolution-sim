@@ -58,6 +58,7 @@ async function runNextTick() {
 
 async function startSimulation() {
   isRunning.set(true);
+  console.log("DEV - starting simulation through store");
   await SimulationWorker.startSimulation(
     Comlink.proxy((snapshot) => {
       currentSnapshot.set(snapshot);
@@ -67,6 +68,7 @@ async function startSimulation() {
 
 async function stopSimulation() {
   isRunning.set(false);
+  console.log("DEV - stopping simulation through store");
   await SimulationWorker.stopSimulation();
 }
 

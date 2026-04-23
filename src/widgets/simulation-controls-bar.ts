@@ -47,20 +47,14 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
           ${when(
             this.simulationStore.isRunning.get(),
             () => html`
-              <sl-button>
-                <sl-icon
-                  name="pause"
-                  @click=${() => this.simulationStore.stopSimulation()}
-                ></sl-icon>
+              <sl-button @click=${() => this.simulationStore.stopSimulation()}>
+                <sl-icon name="pause"></sl-icon>
                 Pause
               </sl-button>
             `,
             () => html`
-              <sl-button>
-                <sl-icon
-                  name="play"
-                  @click=${() => this.simulationStore.startSimulation()}
-                ></sl-icon>
+              <sl-button @click=${() => this.simulationStore.startSimulation()}>
+                <sl-icon name="play"></sl-icon>
                 Start
               </sl-button>
             `,
