@@ -30,18 +30,11 @@ export interface SimulationRunner {
 
 const TICK_INTERVAL = 1000;
 
-console.log("DEV - SimulationWorker module loaded");
-
 export const SimulationRunner: SimulationRunner = {
   currentTick: -1,
   activeSimulation: null,
   simulationRunning: false,
   initializeNewSimulation(parameters) {
-    console.log(
-      "DEV - initializeNewSimulation called with parameters",
-      parameters,
-    );
-
     const newSimulation = initializeSimulation(parameters);
     this.activeSimulation = newSimulation;
     this.currentTick = 0;
@@ -75,14 +68,14 @@ export const SimulationRunner: SimulationRunner = {
   },
 
   startSimulation(onTickFinished) {
-    console.log("DEV - starting simulation");
+    console.log("INFO - starting simulation");
     if (hasNoValue(this.activeSimulation) || this.currentTick < 0) {
       throw new Error("No active simulation to run");
     } else {
       this.simulationRunning = true;
       const runNextTick = () => {
         if (this.simulationRunning) {
-          console.log("DEV - running next tick");
+          console.log("INFO - running next tick");
           const snapshot = this.runTick();
           onTickFinished(snapshot);
           setTimeout(runNextTick, TICK_INTERVAL);

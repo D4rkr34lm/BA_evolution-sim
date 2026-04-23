@@ -21,7 +21,7 @@ export const moveActionDefinition = defineAction({
 
         if (
           compareVectors(newPosition, ">=", VEC_0) &&
-          compareVectors(newPosition, "<=", worldSize)
+          compareVectors(newPosition, "<", worldSize)
         ) {
           const changedAgent = {
             ...me,

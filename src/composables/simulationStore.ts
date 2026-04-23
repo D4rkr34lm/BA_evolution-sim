@@ -35,6 +35,7 @@ const currentActiveSimulationData = computed(() => {
     return {
       metadata,
       snapshot,
+      currentTick: snapshot.tick,
     };
   } else {
     return null;
@@ -42,7 +43,7 @@ const currentActiveSimulationData = computed(() => {
 });
 
 async function initializeNewSimulation(options: SimulationInitOptions) {
-  console.log("DEV - initialized new simulation with options", options);
+  console.log("INFO - initialized new simulation with options", options);
 
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
@@ -57,20 +58,19 @@ async function runNextTick() {
 }
 
 async function startSimulation() {
-  isRunning.set(true);
-  console.log("DEV - starting simulation through store");
-  await SimulationWorker.startSimulation(
-    Comlink.proxy((snapshot) => {
-      console.log("DEV - received tick result from worker", snapshot);
-      currentSnapshot.set(snapshot);
-    }),
-  );
+  if (!isRunning.get()) {
+    await SimulationWorker.startSimulation(
+      Comlink.proxy((snapshot) => {
+        currentSnapshot.set(snapshot);
+      }),
+    );
+    isRunning.set(true);
+  }
 }
 
 async function stopSimulation() {
-  isRunning.set(false);
-  console.log("DEV - stopping simulation through store");
   await SimulationWorker.stopSimulation();
+  isRunning.set(false);
 }
 
 export function useSimulationStore() {
