@@ -17,13 +17,7 @@ export const moveActionDefinition = defineAction({
       if (newEnergy < 0) {
         return err(ACTION_ERRORS.ERR_NOT_ENOUGH_ENERGY);
       } else {
-        console.log("DEV - moving agent in direction", direction);
         const newPosition = addVectors(me.position, direction);
-        console.log(
-          "DEV - new position after move would be",
-          me.position,
-          newPosition,
-        );
 
         if (
           compareVectors(newPosition, ">=", VEC_0) &&
