@@ -63,16 +63,16 @@ class AgentRenderer implements EntitySnapshotRenderer<AgentSnapshot> {
   readonly root: Container;
   readonly bodySprite: Sprite;
 
-  constructor(agentSnapshot: AgentSnapshot) {
-    this.root = new Container();
+  constructor() {
+    this.root = new Container({
+      zIndex: 2,
+    });
     this.bodySprite = new Sprite({
       texture: Textures.agent,
       width: BASE_TILE_SIZE,
       height: BASE_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
-
-    this.update(agentSnapshot);
   }
 
   update(agentSnapshot: AgentSnapshot) {
@@ -87,16 +87,16 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
   readonly root: Container;
   readonly bodySprite: Sprite;
 
-  constructor(foodSourceSnapshot: FoodSourceSnapshot) {
-    this.root = new Container();
+  constructor() {
+    this.root = new Container({
+      zIndex: 1,
+    });
     this.bodySprite = new Sprite({
       texture: Textures.foodSource,
       width: BASE_TILE_SIZE,
       height: BASE_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
-
-    this.update(foodSourceSnapshot);
   }
 
   update(foodSourceSnapshot: FoodSourceSnapshot) {
@@ -112,9 +112,7 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
 
   constructor(
     private readonly rootContainer: Container,
-    private readonly createRenderer: (
-      snapshot: TSnapshot,
-    ) => EntitySnapshotRenderer<TSnapshot>,
+    private readonly createRenderer: () => EntitySnapshotRenderer<TSnapshot>,
   ) {}
 
   update(snapshots: TSnapshot[]) {
@@ -142,7 +140,8 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
       }
       // Create
       else {
-        const newRenderer = this.createRenderer(snapshot);
+        const newRenderer = this.createRenderer();
+        newRenderer.update(snapshot);
         this.rendererCache.set(snapshotId, newRenderer);
         this.rootContainer.addChild(newRenderer.root);
       }
@@ -153,15 +152,14 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
 function useSimulationRenderer() {
   const rootContainer = new Container();
   const backgroundRenderer = new BackgroundRenderer();
-  const agentRendererCache = new EntitySnapshotRendererCache<AgentSnapshot>(
+  const agentRendererCache = new EntitySnapshotRendererCache(
     rootContainer,
-    (snapshot) => new AgentRenderer(snapshot),
+    () => new AgentRenderer(),
   );
-  const foodSourceRendererCache =
-    new EntitySnapshotRendererCache<FoodSourceSnapshot>(
-      rootContainer,
-      (snapshot) => new FoodSourceRenderer(snapshot),
-    );
+  const foodSourceRendererCache = new EntitySnapshotRendererCache(
+    rootContainer,
+    () => new FoodSourceRenderer(),
+  );
 
   rootContainer.addChild(backgroundRenderer.root);
 
