@@ -78,6 +78,7 @@ function startSimulation(
 function stopSimulation() {
   if (hasValue(runTimeoutId)) {
     clearTimeout(runTimeoutId);
+    runTimeoutId = null;
   }
 }
 
