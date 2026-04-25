@@ -1,3 +1,4 @@
+import { uid } from "uid";
 import {
   FOOD_BASE_ENERGY_GAIN_FROM_CONSUMPTION,
   FOOD_RECOVERY_RATE,
@@ -5,6 +6,7 @@ import {
 import { Vec2 } from "../position";
 
 export interface FoodSource {
+  id: string;
   position: Vec2;
   recoveryRate: number;
   ticksTillRecovery: number;
@@ -14,6 +16,7 @@ export interface FoodSource {
 
 export function spawnFoodSource({ position }: { position: Vec2 }): FoodSource {
   return {
+    id: uid(),
     position,
     recoveryRate: FOOD_RECOVERY_RATE,
     ticksTillRecovery: 0,
