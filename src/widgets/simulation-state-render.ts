@@ -150,7 +150,9 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
 }
 
 function useSimulationRenderer() {
-  const rootContainer = new Container();
+  const rootContainer = new Container({
+    sortableChildren: true,
+  });
   const backgroundRenderer = new BackgroundRenderer();
   const agentRendererCache = new EntitySnapshotRendererCache(
     rootContainer,
