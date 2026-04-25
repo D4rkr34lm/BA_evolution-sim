@@ -2,7 +2,12 @@ import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, query } from "lit/decorators.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
-import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
+import {
+  AgentSnapshot,
+  EntitySnapshot,
+  FoodSourceSnapshot,
+  SimulationSnapshot,
+} from "@/simulation/serialization";
 import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
@@ -19,6 +24,10 @@ const BASE_TILE_SIZE = 16;
 
 function toTilePosition(vec: Vec2): Vec2 {
   return scaleVector(vec, BASE_TILE_SIZE);
+}
+interface EntitySnapshotRenderer<TSnapshot> {
+  root: Container;
+  update: (snapshot: TSnapshot) => void;
 }
 
 class BackgroundRenderer {
@@ -50,20 +59,20 @@ class BackgroundRenderer {
     this.backgroundTilesSprite.setSize(backgroundTileSize);
   }
 }
-class AgentRenderer {
+class AgentRenderer implements EntitySnapshotRenderer<AgentSnapshot> {
   readonly root: Container;
   readonly bodySprite: Sprite;
 
-  constructor(agentSnapshot: AgentSnapshot) {
-    this.root = new Container();
+  constructor() {
+    this.root = new Container({
+      zIndex: 2,
+    });
     this.bodySprite = new Sprite({
       texture: Textures.agent,
       width: BASE_TILE_SIZE,
       height: BASE_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
-
-    this.update(agentSnapshot);
   }
 
   update(agentSnapshot: AgentSnapshot) {
@@ -74,44 +83,87 @@ class AgentRenderer {
   }
 }
 
-function useSimulationRenderer() {
-  const rootContainer = new Container();
-  const backgroundRenderer = new BackgroundRenderer();
-  const agentRendererCache = new Map<string, AgentRenderer>();
+class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
+  readonly root: Container;
+  readonly bodySprite: Sprite;
 
-  rootContainer.addChild(backgroundRenderer.root);
+  constructor() {
+    this.root = new Container({
+      zIndex: 1,
+    });
+    this.bodySprite = new Sprite({
+      texture: Textures.foodSource,
+      width: BASE_TILE_SIZE,
+      height: BASE_TILE_SIZE,
+    });
+    this.root.addChild(this.bodySprite);
+  }
 
-  function updateAgents(snapshots: AgentSnapshot[]) {
-    // Remove agents no longer existent
-    const oldAgentIds = [...agentRendererCache.keys()];
-    const newAgentIds = new Set(snapshots.map((sp) => sp.id));
+  update(foodSourceSnapshot: FoodSourceSnapshot) {
+    const tilePosition = toTilePosition(foodSourceSnapshot.position);
 
-    const removedAgentIds = oldAgentIds.filter((id) => !newAgentIds.has(id));
-    const agentRendersToRemove = removedAgentIds
-      .map((id) => agentRendererCache.get(id))
+    this.bodySprite.x = tilePosition.x;
+    this.bodySprite.y = tilePosition.y;
+  }
+}
+
+class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
+  readonly rendererCache = new Map<string, EntitySnapshotRenderer<TSnapshot>>();
+
+  constructor(
+    private readonly rootContainer: Container,
+    private readonly createRenderer: () => EntitySnapshotRenderer<TSnapshot>,
+  ) {}
+
+  update(snapshots: TSnapshot[]) {
+    const oldIds = Array.from(this.rendererCache.keys());
+    const nextIds = new Set(snapshots.map((sp) => sp.id));
+
+    const removedIds = oldIds.filter((id) => !nextIds.has(id));
+    const renderersToRemove = removedIds
+      .map((id) => this.rendererCache.get(id))
       .filter(hasValue);
 
-    removedAgentIds.forEach((removedId) =>
-      agentRendererCache.delete(removedId),
-    );
+    removedIds.forEach((removedId) => this.rendererCache.delete(removedId));
 
-    for (const removedAgent of agentRendersToRemove) {
-      rootContainer.removeChild(removedAgent.root);
+    // Remove
+    for (const removedRenderer of renderersToRemove) {
+      this.rootContainer.removeChild(removedRenderer.root);
     }
 
-    // Create or update agent renderers
     for (const snapshot of snapshots) {
-      const cachedRenderer = agentRendererCache.get(snapshot.id);
-
+      const snapshotId = snapshot.id;
+      const cachedRenderer = this.rendererCache.get(snapshotId);
+      // Update
       if (hasValue(cachedRenderer)) {
         cachedRenderer.update(snapshot);
-      } else {
-        const newRenderer = new AgentRenderer(snapshot);
-        agentRendererCache.set(snapshot.id, newRenderer);
-        rootContainer.addChild(newRenderer.root);
+      }
+      // Create
+      else {
+        const newRenderer = this.createRenderer();
+        newRenderer.update(snapshot);
+        this.rendererCache.set(snapshotId, newRenderer);
+        this.rootContainer.addChild(newRenderer.root);
       }
     }
   }
+}
+
+function useSimulationRenderer() {
+  const rootContainer = new Container({
+    sortableChildren: true,
+  });
+  const backgroundRenderer = new BackgroundRenderer();
+  const agentRendererCache = new EntitySnapshotRendererCache(
+    rootContainer,
+    () => new AgentRenderer(),
+  );
+  const foodSourceRendererCache = new EntitySnapshotRendererCache(
+    rootContainer,
+    () => new FoodSourceRenderer(),
+  );
+
+  rootContainer.addChild(backgroundRenderer.root);
 
   function update(
     metadata: SimulationMetadata,
@@ -119,7 +171,8 @@ function useSimulationRenderer() {
   ) {
     backgroundRenderer.update(metadata.worldSize);
 
-    updateAgents(snapshot?.agents ?? []);
+    agentRendererCache.update(snapshot?.agents ?? []);
+    foodSourceRendererCache.update(snapshot?.foodSources ?? []);
   }
 
   return {

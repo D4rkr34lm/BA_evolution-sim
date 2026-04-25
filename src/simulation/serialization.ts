@@ -18,13 +18,17 @@ function recordAgentSnapshot(agent: Agent): AgentSnapshot {
 
 function recordFoodSourceSnapshot(foodSource: FoodSource): FoodSourceSnapshot {
   return {
+    id: foodSource.id,
     position: foodSource.position,
   };
 }
 
 export interface FoodSourceSnapshot {
+  id: string;
   position: Vec2;
 }
+
+export type EntitySnapshot = AgentSnapshot | FoodSourceSnapshot;
 
 export function recordSimulationSnapshot(
   tick: number,
