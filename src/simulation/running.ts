@@ -5,6 +5,7 @@ import { Agent } from "./agent/agent";
 import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
 import { Vec2 } from "./position";
+import { hasValue } from "@/utils/typeGuards";
 
 export interface Simulation {
   metadata: SimulationMetadata;
@@ -19,7 +20,10 @@ export interface SimulationMetadata {
 function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
   return {
     me: agent.state,
-    otherAgents: simulation.agents.filter((otherAgent) => otherAgent !== agent),
+    worldSize: simulation.metadata.worldSize,
+    otherAgents: simulation.agents.filter(
+      (otherAgent) => otherAgent.id !== agent.id,
+    ),
     foodSources: simulation.foodSources,
   };
 }
@@ -83,14 +87,21 @@ function applyAgentContextUpdate(
 }
 
 export function runSimulation(simulation: Simulation): Simulation {
-  const simulationWithAgentUpdates = simulation.agents.reduce(
-    (updatedSimulation, agent) => {
-      const context = getAgentContext(agent, simulation);
-      const newContext = runAgent(agent, context);
-      return applyAgentContextUpdate(updatedSimulation, agent, newContext);
-    },
-    cloneDeep(simulation),
-  );
+  const simulationWithAgentUpdates = simulation.agents
+    .map((agent) => agent.id)
+    .reduce((updatedSimulation, agentId) => {
+      const agent = updatedSimulation.agents.find(
+        (agent) => agent.id === agentId,
+      );
+
+      if (hasValue(agent)) {
+        const context = getAgentContext(agent, updatedSimulation);
+        const newContext = runAgent(agent, context);
+        return applyAgentContextUpdate(updatedSimulation, agent, newContext);
+      } else {
+        return updatedSimulation;
+      }
+    }, cloneDeep(simulation));
 
   return simulationWithAgentUpdates;
 }

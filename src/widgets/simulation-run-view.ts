@@ -1,20 +1,18 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
-import { SimulationRunView } from "./simulation-run-view";
+import { SimulationStateRender } from "./simulation-state-render";
+import { SimulationControlsBar } from "./simulation-controls-bar";
 import { SignalWatcher, html } from "@lit-labs/signals";
-import { hasValue } from "@/utils/typeGuards";
 import { useSimulationStore } from "@/composables/simulationStore";
-import { when } from "lit/directives/when.js";
-import { SimulationConfigurationView } from "./simulation-configuration-view";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
 
-@customElement("webwriter-evolution-sim")
-export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
+@customElement("simulation-run-view")
+export class SimulationRunView extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
@@ -28,8 +26,8 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
    *   static scopedElements = {"sl-button": SlButton}
    **/
   static scopedElements = {
-    "simulation-run-view": SimulationRunView,
-    "simulation-configuration-view": SimulationConfigurationView,
+    "simulation-state-render": SimulationStateRender,
+    "simulation-controls-bar": SimulationControlsBar,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -38,19 +36,28 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
       display: flex;
       flex-direction: column;
     }
+
+    #bottom-bar {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
   `;
 
   /** Define your template here and return it. */
   render() {
     return html`
       <div id="root">
-        ${when(
-          hasValue(this.simulationStore.currentActiveSimulationData.get()),
-          () => html` <simulation-run-view></simulation-run-view> `,
-          () => html`
-            <simulation-configuration-view></simulation-configuration-view>
-          `,
-        )}
+        <simulation-state-render></simulation-state-render>
+        <div id="bottom-bar">
+          <simulation-controls-bar></simulation-controls-bar>
+          <span>
+            Current Tick:
+            ${this.simulationStore.currentActiveSimulationData.get()
+              ?.currentTick ?? -1}
+          </span>
+        </div>
       </div>
     `;
   }

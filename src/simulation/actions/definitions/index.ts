@@ -4,11 +4,13 @@ import { reproduceActionDefinition } from "./reproduce";
 import { Action } from "../defineAction";
 import { Phenotype } from "@/simulation/genetics/phenotype";
 import { ActionMap } from "../actionMap";
+import { noopActionDefinition } from "./noop";
 
 export const definedActions = [
   moveActionDefinition,
   reproduceActionDefinition,
   eatActionDefinition,
+  noopActionDefinition,
 ];
 
 export type DefinedActionMap = ActionMap<typeof definedActions>;

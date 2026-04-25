@@ -26,7 +26,7 @@ export function buildEnrichedActionDeciderMap<
   agentContext: AgentContext,
 ): EnrichedActionDeciderMap<TActionMap> {
   return mapValues(actionMap, (action) => {
-    const canExecute = (...params: never) => {
+    const canExecute = (params: never) => {
       const result = action.execute(agentContext, params);
 
       if (result.isOk()) {
