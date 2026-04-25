@@ -64,6 +64,7 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
       <div id="root">
         <div class="flex-row">
           <sl-input
+            type="number"
             label="World Width"
             .value="${this.form.formValue.get().worldSize.x}"
             @input="${createInputHandler((e) =>
@@ -80,6 +81,7 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
           ></sl-input>
         </div>
         <sl-input
+          type="number"
           label="Initial Agents Amount"
           .value="${this.form.formValue.get().initialAgentsAmount}"
           @input="${createInputHandler((e) =>
@@ -87,6 +89,7 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
           )}"
         ></sl-input>
         <sl-input
+          type="number"
           label="Initial Food Sources Amount"
           .value="${this.form.formValue.get().initialFoodSourcesAmount}"
           @input="${createInputHandler((e) =>

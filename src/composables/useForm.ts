@@ -1,5 +1,5 @@
 import { signal } from "@lit-labs/signals";
-import { set } from "lodash-es";
+import { cloneDeep, set } from "lodash-es";
 
 type Paths<T> = T extends object
   ? {
@@ -23,7 +23,7 @@ type PathValue<T, P extends string> = P extends `${infer Key}.${infer Rest}`
 export function useForm<T extends Record<string | number | symbol, any>>(
   initialValues: T,
 ) {
-  const formValue = signal(initialValues);
+  const formValue = signal(cloneDeep(initialValues));
 
   function updateFormValue<TPath extends Paths<T>>(
     target: TPath,

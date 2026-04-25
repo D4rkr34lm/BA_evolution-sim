@@ -1,4 +1,4 @@
-import { hasNoValue } from "@/utils/typeGuards";
+import { hasNoValue, hasValue } from "@/utils/typeGuards";
 import { runSimulation, Simulation, SimulationMetadata } from "./running";
 import { recordSimulationSnapshot, SimulationSnapshot } from "./serialization";
 import { initializeSimulation } from "./initialization";
@@ -12,9 +12,6 @@ export interface SimulationInitOptions {
 }
 
 export interface SimulationRunner {
-  currentTick: number;
-  activeSimulation: Simulation | null;
-  isSimulationRunning: boolean;
   initializeNewSimulation: (simulationParameters: SimulationInitOptions) => {
     metadata: SimulationMetadata;
     initialSnapshot: SimulationSnapshot;
@@ -30,64 +27,72 @@ export interface SimulationRunner {
 
 const TICK_INTERVAL = 1000;
 
-export const SimulationRunner: SimulationRunner = {
-  currentTick: -1,
-  activeSimulation: null,
-  isSimulationRunning: false,
-  initializeNewSimulation(parameters) {
-    const newSimulation = initializeSimulation(parameters);
-    this.activeSimulation = newSimulation;
-    this.currentTick = 0;
-    return {
-      metadata: newSimulation.metadata,
-      initialSnapshot: recordSimulationSnapshot(
-        this.currentTick,
-        newSimulation,
-      ),
+let currentTick: number = -1;
+let simulation: Simulation | null = null;
+let runTimeoutId: number | null;
+
+function initializeNewSimulation(options: SimulationInitOptions) {
+  const newSimulation = initializeSimulation(options);
+  simulation = newSimulation;
+  currentTick = 0;
+  return {
+    metadata: newSimulation.metadata,
+    initialSnapshot: recordSimulationSnapshot(currentTick, newSimulation),
+  };
+}
+
+function runSimulationTick() {
+  if (hasNoValue(simulation) || currentTick < 0) {
+    throw new Error("No active simulation to run");
+  }
+
+  const updatedSimulation = runSimulation(simulation);
+  const updatedTick = currentTick + 1;
+
+  simulation = updatedSimulation;
+  currentTick = updatedTick;
+
+  const snapshot = recordSimulationSnapshot(currentTick, simulation);
+
+  return snapshot;
+}
+
+function startSimulation(
+  onTickFinished: (snapshot: SimulationSnapshot) => void,
+) {
+  console.log("INFO - starting simulation");
+  if (hasNoValue(simulation) || currentTick < 0) {
+    throw new Error("No simulation to run");
+  } else if (hasNoValue(runTimeoutId)) {
+    const runNextTick = () => {
+      console.log("INFO - running next tick");
+      const snapshot = runSimulationTick();
+      onTickFinished(snapshot);
+      runTimeoutId = setTimeout(runNextTick, TICK_INTERVAL);
     };
-  },
 
+    runNextTick();
+  }
+}
+
+function stopSimulation() {
+  if (hasValue(runTimeoutId)) {
+    clearTimeout(runTimeoutId);
+  }
+}
+
+export const SimulationRunner: SimulationRunner = {
+  initializeNewSimulation,
+  startSimulation,
+  stopSimulation,
   runTick() {
-    if (hasNoValue(this.activeSimulation) || this.currentTick < 0) {
-      throw new Error("No active simulation to run");
+    if (hasValue(runTimeoutId)) {
+      throw new Error(
+        "Manually progressing the simulation, while running is forbidden",
+      );
+    } else {
+      return runSimulationTick();
     }
-
-    const simulation = this.activeSimulation;
-    const updatedSimulation = runSimulation(simulation);
-    const updatedTick = this.currentTick + 1;
-
-    this.activeSimulation = updatedSimulation;
-    this.currentTick = updatedTick;
-
-    const snapshot = recordSimulationSnapshot(
-      this.currentTick,
-      this.activeSimulation,
-    );
-
-    return snapshot;
-  },
-
-  startSimulation(onTickFinished) {
-    console.log("INFO - starting simulation");
-    if (hasNoValue(this.activeSimulation) || this.currentTick < 0) {
-      throw new Error("No active simulation to run");
-    } else if (!this.isSimulationRunning) {
-      this.isSimulationRunning = true;
-      const runNextTick = () => {
-        if (this.isSimulationRunning) {
-          console.log("INFO - running next tick");
-          const snapshot = this.runTick();
-          onTickFinished(snapshot);
-          setTimeout(runNextTick, TICK_INTERVAL);
-        }
-      };
-
-      runNextTick();
-    }
-  },
-
-  stopSimulation() {
-    this.isSimulationRunning = false;
   },
 };
 

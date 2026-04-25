@@ -91,7 +91,7 @@ export function runSimulation(simulation: Simulation): Simulation {
     .map((agent) => agent.id)
     .reduce((updatedSimulation, agentId) => {
       const agent = updatedSimulation.agents.find(
-        (agent) => (agent.id = agentId),
+        (agent) => agent.id === agentId,
       );
 
       if (hasValue(agent)) {
