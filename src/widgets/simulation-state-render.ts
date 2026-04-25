@@ -21,8 +21,6 @@ import {msg} from '@lit/localize'
 */
 
 const BASE_TILE_SIZE = 16;
-const FOOD_SOURCE_SIZE_FACTOR = 0.75;
-const FOOD_SOURCE_TINT = 0x8bc34a;
 
 function toTilePosition(vec: Vec2): Vec2 {
   return scaleVector(vec, BASE_TILE_SIZE);
@@ -93,8 +91,8 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
     this.root = new Container();
     this.bodySprite = new Sprite({
       texture: Textures.foodSource,
-      width: BASE_TILE_SIZE * FOOD_SOURCE_SIZE_FACTOR,
-      height: BASE_TILE_SIZE * FOOD_SOURCE_SIZE_FACTOR,
+      width: BASE_TILE_SIZE,
+      height: BASE_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
 
@@ -103,10 +101,9 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
 
   update(foodSourceSnapshot: FoodSourceSnapshot) {
     const tilePosition = toTilePosition(foodSourceSnapshot.position);
-    const centeredOffset = (BASE_TILE_SIZE * (1 - FOOD_SOURCE_SIZE_FACTOR)) / 2;
 
-    this.bodySprite.x = tilePosition.x + centeredOffset;
-    this.bodySprite.y = tilePosition.y + centeredOffset;
+    this.bodySprite.x = tilePosition.x;
+    this.bodySprite.y = tilePosition.y;
   }
 }
 
