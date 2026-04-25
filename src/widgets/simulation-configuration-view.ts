@@ -12,6 +12,7 @@ import {
   SIMULATION_WORLD_SIZE,
 } from "@/simulation/constants";
 import { SlButton } from "@shoelace-style/shoelace";
+import { createInputHandler } from "@/utils/handleInput";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -24,7 +25,7 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
   localize = LOCALIZE
   */
 
-  from = useForm<SimulationInitOptions>({
+  form = useForm<SimulationInitOptions>({
     worldSize: SIMULATION_WORLD_SIZE,
     initialAgentsAmount: SIMULATION_INITIAL_AGENT_COUNT,
     initialFoodSourcesAmount: SIMULATION_FOOD_AMOUNT,
@@ -64,25 +65,38 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
         <div class="flex-row">
           <sl-input
             label="World Width"
-            .value="${this.from.formValue.get().worldSize.x}"
+            .value="${this.form.formValue.get().worldSize.x}"
+            @input="${createInputHandler((e) =>
+              this.form.updateFormValue("worldSize.x", Number(e)),
+            )}"
           ></sl-input>
           <sl-input
+            type="number"
             label="World Height"
-            .value="${this.from.formValue.get().worldSize.y}"
+            .value="${this.form.formValue.get().worldSize.y}"
+            @input="${createInputHandler((e) =>
+              this.form.updateFormValue("worldSize.y", Number(e)),
+            )}"
           ></sl-input>
         </div>
         <sl-input
           label="Initial Agents Amount"
-          .value="${this.from.formValue.get().initialAgentsAmount}"
+          .value="${this.form.formValue.get().initialAgentsAmount}"
+          @input="${createInputHandler((e) =>
+            this.form.updateFormValue("initialAgentsAmount", Number(e)),
+          )}"
         ></sl-input>
         <sl-input
           label="Initial Food Sources Amount"
-          .value="${this.from.formValue.get().initialFoodSourcesAmount}"
+          .value="${this.form.formValue.get().initialFoodSourcesAmount}"
+          @input="${createInputHandler((e) =>
+            this.form.updateFormValue("initialFoodSourcesAmount", Number(e)),
+          )}"
         ></sl-input>
         <sl-button
           @click="${() =>
             this.simulationStore.initializeNewSimulation(
-              this.from.formValue.get(),
+              this.form.formValue.get(),
             )}"
         >
           Start simulation

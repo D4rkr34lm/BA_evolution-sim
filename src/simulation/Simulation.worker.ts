@@ -14,7 +14,7 @@ export interface SimulationInitOptions {
 export interface SimulationRunner {
   currentTick: number;
   activeSimulation: Simulation | null;
-  simulationRunning: boolean;
+  isSimulationRunning: boolean;
   initializeNewSimulation: (simulationParameters: SimulationInitOptions) => {
     metadata: SimulationMetadata;
     initialSnapshot: SimulationSnapshot;
@@ -33,7 +33,7 @@ const TICK_INTERVAL = 1000;
 export const SimulationRunner: SimulationRunner = {
   currentTick: -1,
   activeSimulation: null,
-  simulationRunning: false,
+  isSimulationRunning: false,
   initializeNewSimulation(parameters) {
     const newSimulation = initializeSimulation(parameters);
     this.activeSimulation = newSimulation;
@@ -71,10 +71,10 @@ export const SimulationRunner: SimulationRunner = {
     console.log("INFO - starting simulation");
     if (hasNoValue(this.activeSimulation) || this.currentTick < 0) {
       throw new Error("No active simulation to run");
-    } else {
-      this.simulationRunning = true;
+    } else if (!this.isSimulationRunning) {
+      this.isSimulationRunning = true;
       const runNextTick = () => {
-        if (this.simulationRunning) {
+        if (this.isSimulationRunning) {
           console.log("INFO - running next tick");
           const snapshot = this.runTick();
           onTickFinished(snapshot);
@@ -87,7 +87,7 @@ export const SimulationRunner: SimulationRunner = {
   },
 
   stopSimulation() {
-    this.simulationRunning = false;
+    this.isSimulationRunning = false;
   },
 };
 
