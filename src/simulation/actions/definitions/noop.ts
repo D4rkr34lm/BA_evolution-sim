@@ -7,3 +7,7 @@ export const noopActionDefinition = defineAction({
     return () => ok({});
   },
 });
+
+export function noop() {
+  return { name: noopActionDefinition.name };
+}

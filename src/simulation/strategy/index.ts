@@ -1,4 +1,4 @@
-import { BehaviorName } from "../behavior/defineBehavior";
+import { BehaviorName } from "../behavior/definitions";
 import { Phenotype } from "../genetics/phenotype";
 
 export interface StrategyState {
@@ -13,8 +13,8 @@ export interface Strategy {
 
 export function getAgentStrategy(_: Phenotype): Strategy {
   const initialState: StrategyState = {
-    id: "default",
-    behaviorToExecute: "defaultTestBehavior",
+    id: "eat",
+    behaviorToExecute: "search-and-consume-food",
   };
 
   return {

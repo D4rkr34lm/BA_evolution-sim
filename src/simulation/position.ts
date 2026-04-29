@@ -57,6 +57,21 @@ export function compareVectors(
   }
 }
 
+export function getDistance(a: Vec2, b: Vec2): number {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+export function getDirectionTowards(from: Vec2, to: Vec2): Direction {
+  const deltaX = to.x - from.x;
+  const deltaY = to.y - from.y;
+
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    return deltaX > 0 ? Directions.Right : Directions.Left;
+  } else {
+    return deltaY > 0 ? Directions.Down : Directions.Up;
+  }
+}
+
 export function getUniqueRandomPositions({
   amount,
   max,
