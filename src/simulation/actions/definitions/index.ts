@@ -6,16 +6,18 @@ import { Phenotype } from "@/simulation/genetics/phenotype";
 import { ActionMap } from "../actionMap";
 import { noopActionDefinition } from "./noop";
 
-export const definedActions = [
-  moveActionDefinition,
-  reproduceActionDefinition,
-  eatActionDefinition,
-  noopActionDefinition,
-];
+export function getDefinedActions() {
+  return [
+    moveActionDefinition,
+    reproduceActionDefinition,
+    eatActionDefinition,
+    noopActionDefinition,
+  ];
+}
 
-export type DefinedActionMap = ActionMap<typeof definedActions>;
+export type DefinedActionMap = ActionMap<ReturnType<typeof getDefinedActions>>;
 
-export type DefinedAction = (typeof definedActions)[number];
+export type DefinedAction = ReturnType<typeof getDefinedActions>[number];
 
 export type ActionName = DefinedAction["name"];
 

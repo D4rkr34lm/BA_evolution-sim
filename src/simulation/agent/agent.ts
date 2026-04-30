@@ -1,5 +1,5 @@
 import { uid } from "uid";
-import { DefinedActionMap, definedActions } from "../actions/definitions";
+import { DefinedActionMap, getDefinedActions } from "../actions/definitions";
 import { getAgentPhenotype, Phenotype } from "../genetics/phenotype";
 import { Vec2 } from "../position";
 import { getAgentStrategy, Strategy } from "../strategy";
@@ -20,7 +20,7 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
   const phenotype = getAgentPhenotype();
 
   const strategy = getAgentStrategy(phenotype);
-  const actionMap = buildActionMap(definedActions, phenotype);
+  const actionMap = buildActionMap(getDefinedActions(), phenotype);
   const state = getInitialAgentState({
     position,
     phenotype: phenotype,
