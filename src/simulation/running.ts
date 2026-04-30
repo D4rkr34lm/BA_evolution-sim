@@ -1,4 +1,4 @@
-import { getDefinedBehavior } from "./behavior/defineBehavior";
+import { getDefinedBehavior } from "./behavior/definitions/index";
 import { AgentContext } from "./agentContext";
 import { FoodSource } from "./foodSource";
 import { Agent } from "./agent/agent";
