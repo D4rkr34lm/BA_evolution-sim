@@ -10,7 +10,7 @@ export const eatActionDefinition = defineAction({
     return ({ me, foodSources }, foodSource: FoodSource) => {
       const otherFoodSources = without(foodSources, foodSource);
 
-      if (isEqual(me.position, foodSource.position)) {
+      if (!isEqual(me.position, foodSource.position)) {
         return err(ACTION_ERRORS.ERR_NOT_IN_RANGE);
       } else {
         const energyGained = Math.min(
