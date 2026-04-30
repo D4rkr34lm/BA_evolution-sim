@@ -4,6 +4,7 @@ import { Directions } from "@/simulation/position";
 import { SIMULATION_WORLD_SIZE } from "@/simulation/constants";
 import { AgentState } from "@/simulation/agent/state";
 import { ACTION_ERRORS } from "../actionErrors";
+import { spawnAgent } from "@/simulation/agent/agent";
 
 describe("move action", () => {
   function buildAction() {
@@ -79,5 +80,29 @@ describe("move action", () => {
 
     assert(result.isErr());
     expect(result.error).toBe(ACTION_ERRORS.ERR_OUT_OF_BOUNDS);
+  });
+
+  it("agent should not be able to move to a position occupied by another agent", () => {
+    const sut = buildAction();
+    const me: AgentState = {
+      position: { x: 0, y: 0 },
+      currentEnergy: 100,
+    };
+    const otherAgent = spawnAgent({
+      position: { x: 0, y: 1 },
+    });
+
+    const result = sut.execute(
+      {
+        worldSize: SIMULATION_WORLD_SIZE,
+        me,
+        foodSources: [],
+        otherAgents: [otherAgent],
+      },
+      Directions.Down,
+    );
+
+    assert(result.isErr());
+    expect(result.error).toBe(ACTION_ERRORS.ERR_POSITION_OCCUPIED);
   });
 });
