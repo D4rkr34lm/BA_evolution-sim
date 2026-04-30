@@ -83,6 +83,7 @@ function applyAgentContextUpdate(
   return {
     ...simulation,
     agents: updatedAgents,
+    foodSources: newContext.foodSources ?? simulation.foodSources,
   };
 }
 

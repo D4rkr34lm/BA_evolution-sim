@@ -12,9 +12,11 @@ export const searchAndConsumeFoodBehavior = defineBehavior({
 
     const foodSourcesSortedByDistance = sortBy(foodSources, (foodSource) =>
       getDistance(me.position, foodSource.position),
-    );
+    ).filter((foodSource) => foodSource.ticksTillRecovery === 0);
 
     const closestFoodSource = first(foodSourcesSortedByDistance);
+
+    console.log("Closest food source:", closestFoodSource);
 
     if (hasValue(closestFoodSource)) {
       const eatAction = actions.eat.canExecute(closestFoodSource);

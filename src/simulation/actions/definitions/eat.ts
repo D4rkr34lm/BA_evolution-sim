@@ -12,6 +12,8 @@ export const eatActionDefinition = defineAction({
 
       if (!isEqual(me.position, foodSource.position)) {
         return err(ACTION_ERRORS.ERR_NOT_IN_RANGE);
+      } else if (foodSource.ticksTillRecovery > 0) {
+        return err(ACTION_ERRORS.ERR_RESOURCE_UNAVAILABLE);
       } else {
         const energyGained = Math.min(
           foodSource.baseEnergyGainFromConsumption,
