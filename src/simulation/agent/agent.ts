@@ -2,7 +2,7 @@ import { uid } from "uid";
 import { DefinedActionMap, getDefinedActions } from "../actions/definitions";
 import { getAgentPhenotype, Phenotype } from "../genetics/phenotype";
 import { Vec2 } from "../position";
-import { getAgentStrategy, Strategy } from "../strategy";
+import { buildAgentStrategy, Strategy } from "../strategy";
 import { AgentState, getInitialAgentState } from "./state";
 import { buildActionMap } from "../actions/actionMap";
 
@@ -19,7 +19,7 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
 
   const phenotype = getAgentPhenotype();
 
-  const strategy = getAgentStrategy(phenotype);
+  const strategy = buildAgentStrategy(phenotype);
   const actionMap = buildActionMap(getDefinedActions(), phenotype);
   const state = getInitialAgentState({
     position,

@@ -6,6 +6,7 @@ import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
 import { Vec2 } from "./position";
 import { hasValue } from "@/utils/typeGuards";
+import { getBehaviorToExecute } from "./strategy";
 
 export interface Simulation {
   metadata: SimulationMetadata;
@@ -29,7 +30,7 @@ function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
 }
 
 function runAgent(agent: Agent, context: AgentContext): AgentContext {
-  const behaviorToExecuteName = agent.strategy.currentState.behaviorToExecute;
+  const behaviorToExecuteName = getBehaviorToExecute(context, agent.strategy);
 
   const deciderMap = buildEnrichedActionDeciderMap(agent.actionMap, context);
   const behaviorToExecute = getDefinedBehavior(behaviorToExecuteName);
