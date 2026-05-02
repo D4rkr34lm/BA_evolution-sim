@@ -50,6 +50,14 @@ function runAgent(agent: Agent, context: AgentContext): AgentContext {
       : undefined) as never,
   );
 
+  console.log(
+    "DEV - Action execution result:",
+    agent.id,
+    actionToRun.name,
+    agent.state,
+    actionExecutionResult,
+  );
+
   if (actionExecutionResult.isErr()) {
     console.error(
       `Error executing action ${actionToRun.name}: ${actionExecutionResult.error}`,
@@ -73,13 +81,13 @@ function applyAgentContextUpdate(
     state: newContext.me,
   };
   const updatedAgentsFromContext = [updatedMe, ...newContext.otherAgents];
-
-  const updatedAgents = simulation.agents.map((simAgent) => {
-    const updatedAgentFromContext = updatedAgentsFromContext.find(
-      (updatedAgent) => updatedAgent.id === simAgent.id,
-    );
-    return updatedAgentFromContext ?? simAgent;
-  });
+  const unchangedAgents = simulation.agents.filter(
+    (agent) =>
+      !updatedAgentsFromContext.some(
+        (updatedAgent) => updatedAgent.id === agent.id,
+      ),
+  );
+  const updatedAgents = [...unchangedAgents, ...updatedAgentsFromContext];
 
   return {
     ...simulation,
@@ -99,6 +107,11 @@ export function runSimulation(simulation: Simulation): Simulation {
       if (hasValue(agent)) {
         const context = getAgentContext(agent, updatedSimulation);
         const newContext = runAgent(agent, context);
+        console.log(
+          "DEV - New context after running agent:",
+          agent.id,
+          newContext,
+        );
         return applyAgentContextUpdate(updatedSimulation, agent, newContext);
       } else {
         return updatedSimulation;

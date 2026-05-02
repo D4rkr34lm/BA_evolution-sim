@@ -16,8 +16,6 @@ export const searchAndConsumeFoodBehavior = defineBehavior({
 
     const closestFoodSource = first(foodSourcesSortedByDistance);
 
-    console.log("Closest food source:", closestFoodSource);
-
     if (hasValue(closestFoodSource)) {
       const eatAction = actions.eat.canExecute(closestFoodSource);
 
