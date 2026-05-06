@@ -36,6 +36,7 @@
         "eslint-plugin-prettier": "^5.5.5",
         "globals": "^17.4.0",
         "jiti": "^2.6.1",
+        "jsdom": "^29.1.1",
         "tsx": "^4.21.0",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.57.2",

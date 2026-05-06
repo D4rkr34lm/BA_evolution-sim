@@ -1,23 +1,22 @@
-import { hasNoValue } from "@/utils/typeGuards";
-import { partition, isEqual } from "lodash-es";
+import { isEqual, without } from "lodash-es";
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
 import { defineAction } from "../defineAction";
+import { FoodSource } from "@/simulation/foodSource";
 
 export const eatActionDefinition = defineAction({
   name: "eat",
   buildAction: ({ energyCapacity }) => {
-    return ({ me, foodSources }) => {
-      const [[foodSourceInRange, ...remainder], other] = partition(
-        foodSources,
-        (source) => isEqual(source.position, me.position),
-      );
+    return ({ me, foodSources }, foodSource: FoodSource) => {
+      const otherFoodSources = without(foodSources, foodSource);
 
-      if (hasNoValue(foodSourceInRange)) {
+      if (!isEqual(me.position, foodSource.position)) {
         return err(ACTION_ERRORS.ERR_NOT_IN_RANGE);
+      } else if (foodSource.ticksTillRecovery > 0) {
+        return err(ACTION_ERRORS.ERR_RESOURCE_UNAVAILABLE);
       } else {
         const energyGained = Math.min(
-          foodSourceInRange.baseEnergyGainFromConsumption,
+          foodSource.baseEnergyGainFromConsumption,
           energyCapacity - me.currentEnergy,
         );
 
@@ -27,13 +26,13 @@ export const eatActionDefinition = defineAction({
         };
 
         const changedFoodSource = {
-          ...foodSourceInRange,
-          ticksTillRecovery: foodSourceInRange.recoveryRate,
+          ...foodSource,
+          ticksTillRecovery: foodSource.recoveryRate,
         };
 
         return ok({
           me: changedAgent,
-          foodSources: [...other, ...remainder, changedFoodSource],
+          foodSources: [...otherFoodSources, changedFoodSource],
         });
       }
     };

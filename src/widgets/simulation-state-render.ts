@@ -101,6 +101,9 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
 
   update(foodSourceSnapshot: FoodSourceSnapshot) {
     const tilePosition = toTilePosition(foodSourceSnapshot.position);
+    const isDepleted = foodSourceSnapshot.ticksTillRecovery > 0;
+
+    this.bodySprite.alpha = isDepleted ? 0.5 : 1;
 
     this.bodySprite.x = tilePosition.x;
     this.bodySprite.y = tilePosition.y;
