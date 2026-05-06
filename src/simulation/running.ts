@@ -58,14 +58,6 @@ function runAgent(agent: Agent, context: AgentContext): AgentContext {
       : undefined) as never,
   );
 
-  console.log(
-    "DEV - Action execution result:",
-    agent.id,
-    actionToRun.name,
-    agent.state,
-    actionExecutionResult,
-  );
-
   if (actionExecutionResult.isErr()) {
     console.error(
       `Error executing action ${actionToRun.name}: ${actionExecutionResult.error}`,

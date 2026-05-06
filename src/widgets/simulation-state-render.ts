@@ -129,13 +129,6 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
 
     removedIds.forEach((removedId) => this.rendererCache.delete(removedId));
 
-    console.log(
-      "DEV 123 Updating renderers. Next IDs:",
-      nextIds,
-      "Removed IDs:",
-      removedIds,
-    );
-
     // Remove
     for (const removedRenderer of renderersToRemove) {
       this.rootContainer.removeChild(removedRenderer.root);

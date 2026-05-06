@@ -36,11 +36,5 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
 }
 
 export function isDead(agent: Agent): boolean {
-  console.log(
-    `DEV 123 Agent ${agent.id} energy:`,
-    agent.state.currentEnergy,
-    agent.state.currentEnergy <= 0 ? "(DEAD)" : "(ALIVE)",
-  );
-
   return agent.state.currentEnergy <= 0;
 }
