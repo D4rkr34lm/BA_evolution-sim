@@ -1,7 +1,7 @@
 import { Vec2 } from "./position";
 
 export const AGENT_ENERGY_CAPACITY = 30;
-export const AGENT_REPRODUCTION_COST = 15;
+export const AGENT_REPRODUCTION_COST = 20;
 export const AGENT_MOVE_COST = 1;
 export const AGENT_VISION_RANGE = 5;
 

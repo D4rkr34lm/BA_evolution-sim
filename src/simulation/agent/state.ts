@@ -15,6 +15,6 @@ export function getInitialAgentState({
 }): AgentState {
   return {
     position,
-    currentEnergy: phenotype.energyCapacity * 0.5,
+    currentEnergy: Math.floor(phenotype.energyCapacity * 0.5),
   };
 }
