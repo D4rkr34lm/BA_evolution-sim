@@ -1,6 +1,6 @@
 import { getUniqueRandomArray } from "@/utils/random";
 import { hasValue } from "@/utils/typeGuards";
-import { zip } from "lodash-es";
+import { values, zip } from "lodash-es";
 
 export interface Vec2 {
   x: number;
@@ -32,33 +32,8 @@ export function scaleVector(vec: Vec2, factor: number): Vec2 {
   };
 }
 
-type ComparatorOperation = ">" | "<" | ">=" | "<=" | "=" | "!=";
-
-export function compareVectors(
-  a: Vec2,
-  operation: ComparatorOperation,
-  b: Vec2,
-): boolean {
-  switch (operation) {
-    case ">":
-      return a.x > b.x && a.y > b.y;
-    case "<":
-      return a.x < b.x && a.y < b.y;
-    case ">=":
-      return a.x >= b.x && a.y >= b.y;
-    case "<=":
-      return a.x <= b.x && a.y <= b.y;
-    case "=":
-      return a.x === b.x && a.y === b.y;
-    case "!=":
-      return a.x !== b.x || a.y !== b.y;
-    default:
-      throw new Error(`Invalid comparator operation: ${operation}`);
-  }
-}
-
 export function getDistance(a: Vec2, b: Vec2): number {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  return Math.floor(Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2));
 }
 
 export function getDirectionTowards(from: Vec2, to: Vec2): Direction {
@@ -87,4 +62,10 @@ export function getUniqueRandomPositions({
       (pos): pos is [number, number] => hasValue(pos[0]) && hasValue(pos[1]),
     )
     .map(([x, y]) => ({ x, y }));
+}
+
+export function getRandomDirection(): Direction {
+  const directions = values(Directions);
+  const randomIndex = Math.floor(Math.random() * directions.length);
+  return directions[randomIndex] ?? Directions.Up;
 }

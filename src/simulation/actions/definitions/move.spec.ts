@@ -5,6 +5,7 @@ import { SIMULATION_WORLD_SIZE } from "@/simulation/constants";
 import { AgentState } from "@/simulation/agent/state";
 import { ACTION_ERRORS } from "../actionErrors";
 import { spawnAgent } from "@/simulation/agent/agent";
+import { err } from "neverthrow";
 
 describe("move action", () => {
   function buildAction() {
@@ -12,6 +13,7 @@ describe("move action", () => {
       energyCapacity: 100,
       reproductionCost: 50,
       moveCost: 10,
+      visionRange: 5,
     });
   }
 
@@ -58,19 +60,22 @@ describe("move action", () => {
     expect(result.error).toBe(ACTION_ERRORS.ERR_NOT_ENOUGH_ENERGY);
   });
 
-  it("agent should not be able to move outside of the world boundaries", () => {
+  it("agent should not be able to move up outside of the world boundaries", () => {
     const sut = buildAction();
     const me: AgentState = {
       position: {
-        x: SIMULATION_WORLD_SIZE.x + 100,
-        y: SIMULATION_WORLD_SIZE.y + 100,
+        x: 0,
+        y: 0,
       },
       currentEnergy: 100,
     };
 
     const result = sut.execute(
       {
-        worldSize: SIMULATION_WORLD_SIZE,
+        worldSize: {
+          x: 1,
+          y: 1,
+        },
         me,
         foodSources: [],
         otherAgents: [],
@@ -78,8 +83,85 @@ describe("move action", () => {
       Directions.Up,
     );
 
-    assert(result.isErr());
-    expect(result.error).toBe(ACTION_ERRORS.ERR_OUT_OF_BOUNDS);
+    expect(result).toEqual(err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS));
+  });
+
+  it("agent should not be able to move down outside of the world boundaries", () => {
+    const sut = buildAction();
+    const me: AgentState = {
+      position: {
+        x: 0,
+        y: 0,
+      },
+      currentEnergy: 100,
+    };
+
+    const result = sut.execute(
+      {
+        worldSize: {
+          x: 1,
+          y: 1,
+        },
+        me,
+        foodSources: [],
+        otherAgents: [],
+      },
+      Directions.Down,
+    );
+
+    expect(result).toEqual(err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS));
+  });
+
+  it("agent should not be able to move left outside of the world boundaries", () => {
+    const sut = buildAction();
+    const me: AgentState = {
+      position: {
+        x: 0,
+        y: 0,
+      },
+      currentEnergy: 100,
+    };
+
+    const result = sut.execute(
+      {
+        worldSize: {
+          x: 1,
+          y: 1,
+        },
+        me,
+        foodSources: [],
+        otherAgents: [],
+      },
+      Directions.Left,
+    );
+
+    expect(result).toEqual(err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS));
+  });
+
+  it("agent should not be able to move right outside of the world boundaries", () => {
+    const sut = buildAction();
+    const me: AgentState = {
+      position: {
+        x: 0,
+        y: 0,
+      },
+      currentEnergy: 100,
+    };
+
+    const result = sut.execute(
+      {
+        worldSize: {
+          x: 1,
+          y: 1,
+        },
+        me,
+        foodSources: [],
+        otherAgents: [],
+      },
+      Directions.Right,
+    );
+
+    expect(result).toEqual(err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS));
   });
 
   it("agent should not be able to move to a position occupied by another agent", () => {

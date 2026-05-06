@@ -1,10 +1,10 @@
 import { getDefinedBehavior } from "./behavior/definitions/index";
 import { AgentContext } from "./agentContext";
 import { FoodSource } from "./foodSource";
-import { Agent } from "./agent/agent";
+import { Agent, isDead } from "./agent/agent";
 import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
-import { Vec2 } from "./position";
+import { getDistance, Vec2 } from "./position";
 import { hasValue } from "@/utils/typeGuards";
 import { getBehaviorToExecute } from "./strategy";
 
@@ -22,10 +22,18 @@ function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
   return {
     me: agent.state,
     worldSize: simulation.metadata.worldSize,
-    otherAgents: simulation.agents.filter(
-      (otherAgent) => otherAgent.id !== agent.id,
+    otherAgents: simulation.agents
+      .filter((otherAgent) => otherAgent.id !== agent.id)
+      .filter(
+        (otherAgent) =>
+          getDistance(otherAgent.state.position, agent.state.position) <=
+          agent.phenotype.visionRange,
+      ),
+    foodSources: simulation.foodSources.filter(
+      (foodSource) =>
+        getDistance(foodSource.position, agent.state.position) <=
+        agent.phenotype.visionRange,
     ),
-    foodSources: simulation.foodSources,
   };
 }
 
@@ -89,10 +97,21 @@ function applyAgentContextUpdate(
   );
   const updatedAgents = [...unchangedAgents, ...updatedAgentsFromContext];
 
+  const unchangedFoodSources = simulation.foodSources.filter(
+    (foodSource) =>
+      !newContext.foodSources?.some(
+        (updatedFoodSource) => updatedFoodSource.id === foodSource.id,
+      ),
+  );
+  const updatedFoodSources = [
+    ...unchangedFoodSources,
+    ...(newContext.foodSources ?? []),
+  ];
+
   return {
     ...simulation,
     agents: updatedAgents,
-    foodSources: newContext.foodSources ?? simulation.foodSources,
+    foodSources: updatedFoodSources,
   };
 }
 
@@ -118,5 +137,23 @@ export function runSimulation(simulation: Simulation): Simulation {
       }
     }, cloneDeep(simulation));
 
-  return simulationWithAgentUpdates;
+  const simulationWithDeadAgentsRemoved = {
+    ...simulationWithAgentUpdates,
+    agents: simulationWithAgentUpdates.agents.filter((agent) => !isDead(agent)),
+  };
+
+  const simulationWithUpdatedFoodSources = {
+    ...simulationWithDeadAgentsRemoved,
+    foodSources: simulationWithDeadAgentsRemoved.foodSources.map(
+      (foodSource) => ({
+        ...foodSource,
+        ticksTillRecovery:
+          foodSource.ticksTillRecovery > 0
+            ? foodSource.ticksTillRecovery - 1
+            : 0,
+      }),
+    ),
+  };
+
+  return simulationWithUpdatedFoodSources;
 }

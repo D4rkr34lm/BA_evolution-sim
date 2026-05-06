@@ -14,6 +14,7 @@ describe("eat action", () => {
       energyCapacity: 100,
       reproductionCost: 50,
       moveCost: 10,
+      visionRange: 5,
     });
   }
 

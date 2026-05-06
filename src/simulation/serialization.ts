@@ -20,12 +20,14 @@ function recordFoodSourceSnapshot(foodSource: FoodSource): FoodSourceSnapshot {
   return {
     id: foodSource.id,
     position: foodSource.position,
+    ticksTillRecovery: foodSource.ticksTillRecovery,
   };
 }
 
 export interface FoodSourceSnapshot {
   id: string;
   position: Vec2;
+  ticksTillRecovery: number;
 }
 
 export type EntitySnapshot = AgentSnapshot | FoodSourceSnapshot;

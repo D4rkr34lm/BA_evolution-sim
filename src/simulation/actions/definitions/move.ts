@@ -1,9 +1,4 @@
-import {
-  Direction,
-  VEC_0,
-  addVectors,
-  compareVectors,
-} from "@/simulation/position";
+import { Direction, addVectors } from "@/simulation/position";
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
 import { defineAction } from "../defineAction";
@@ -21,8 +16,10 @@ export const moveActionDefinition = defineAction({
         const newPosition = addVectors(me.position, direction);
 
         if (
-          compareVectors(newPosition, "<", VEC_0) ||
-          compareVectors(newPosition, ">=", worldSize)
+          newPosition.x < 0 ||
+          newPosition.y < 0 ||
+          newPosition.x >= worldSize.x ||
+          newPosition.y >= worldSize.y
         ) {
           return err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS);
         } else if (

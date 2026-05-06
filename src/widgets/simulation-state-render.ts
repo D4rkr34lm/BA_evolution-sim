@@ -101,6 +101,9 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
 
   update(foodSourceSnapshot: FoodSourceSnapshot) {
     const tilePosition = toTilePosition(foodSourceSnapshot.position);
+    const isDepleted = foodSourceSnapshot.ticksTillRecovery > 0;
+
+    this.bodySprite.alpha = isDepleted ? 0.5 : 1;
 
     this.bodySprite.x = tilePosition.x;
     this.bodySprite.y = tilePosition.y;
@@ -125,6 +128,13 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
       .filter(hasValue);
 
     removedIds.forEach((removedId) => this.rendererCache.delete(removedId));
+
+    console.log(
+      "DEV 123 Updating renderers. Next IDs:",
+      nextIds,
+      "Removed IDs:",
+      removedIds,
+    );
 
     // Remove
     for (const removedRenderer of renderersToRemove) {

@@ -1,6 +1,10 @@
 import { first, sortBy } from "lodash-es";
 import { defineBehavior } from "../defineBehavior";
-import { getDirectionTowards, getDistance } from "@/simulation/position";
+import {
+  getDirectionTowards,
+  getDistance,
+  getRandomDirection,
+} from "@/simulation/position";
 import { ACTION_ERRORS } from "@/simulation/actions/actionErrors";
 import { hasValue } from "@/utils/typeGuards";
 import { noop } from "@/simulation/actions/definitions/noop";
@@ -34,6 +38,14 @@ export const searchAndConsumeFoodBehavior = defineBehavior({
         } else {
           return noop();
         }
+      }
+    } else {
+      const randomDirection = getRandomDirection();
+
+      const moveAction = actions.move.canExecute(randomDirection);
+
+      if (moveAction.isOk()) {
+        return moveAction.value;
       }
     }
 
