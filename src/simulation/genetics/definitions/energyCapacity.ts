@@ -1,13 +1,16 @@
 import { normalizeInRange } from "@/utils/ranges";
 import { defineGene } from "../defineGene";
-import { MAX_VISION_RANGE, DEFAULT_VISION_RANGE } from "@/simulation/constants";
+import {
+  DEFAULT_ENERGY_CAPACITY,
+  MAX_ENERGY_CAPACITY,
+} from "@/simulation/constants";
 
-export const visionRangeGene = defineGene<"vision-range", number>({
-  name: "vision-range",
+export const energyCapacityGene = defineGene<"energy-capacity", number>({
+  name: "energy-capacity",
   applyToPhenotype: (phenotype, allele) => {
     return {
       ...phenotype,
-      visionRange: allele,
+      energyCapacity: allele,
     };
   },
   getMutatedAllele: (allele, mutationRate) => {
@@ -15,13 +18,13 @@ export const visionRangeGene = defineGene<"vision-range", number>({
       const mutation = Math.random() < 0.5 ? -1 : 1;
       return normalizeInRange({
         min: 1,
-        max: MAX_VISION_RANGE,
+        max: MAX_ENERGY_CAPACITY,
         value: allele + mutation,
       });
     }
     return allele;
   },
   yieldNewAllele: () => {
-    return DEFAULT_VISION_RANGE;
+    return DEFAULT_ENERGY_CAPACITY;
   },
 });

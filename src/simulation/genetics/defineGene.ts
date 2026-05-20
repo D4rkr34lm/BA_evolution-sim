@@ -15,10 +15,7 @@ export interface GeneDefinition<TName extends string, TAllele extends Allele> {
   yieldNewAllele(): TAllele;
 }
 
-export function defineGene<
-  TAllele extends Allele,
-  const TName extends string = string,
->({
+export function defineGene<const TName extends string, TAllele extends Allele>({
   name,
   applyToPhenotype,
   getMutatedAllele,
