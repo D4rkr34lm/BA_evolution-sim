@@ -7,6 +7,7 @@ import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
 import { getDistance, Vec2 } from "./position";
 import { hasValue } from "@/utils/typeGuards";
 import { getBehaviorToExecute } from "./strategy";
+import { getGenomeFromReproduction } from "./genetics/reproduction";
 
 export interface Simulation {
   metadata: SimulationMetadata;
@@ -35,7 +36,10 @@ function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
         agent.phenotype.visionRange,
     ),
     spawnAgent: () =>
-      spawnAgent({ position: agent.state.position, genome: agent.genome }),
+      spawnAgent({
+        position: agent.state.position,
+        genome: getGenomeFromReproduction({ parentGenome: agent.genome }),
+      }),
   };
 }
 

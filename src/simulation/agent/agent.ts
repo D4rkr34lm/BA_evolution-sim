@@ -34,6 +34,8 @@ export function spawnAgent({
     phenotype: phenotype,
   });
 
+  console.log("DEV - Spawning new agent with genome:", genome);
+
   return {
     id,
     genome,
