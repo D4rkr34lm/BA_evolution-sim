@@ -4,6 +4,7 @@ import {
   DEFAULT_ENERGY_CAPACITY,
   MAX_ENERGY_CAPACITY,
 } from "@/simulation/constants";
+import { shouldMutate } from "../shouldMutate";
 
 export const energyCapacityGene = defineGene<"energy-capacity", number>({
   name: "energy-capacity",
@@ -14,7 +15,7 @@ export const energyCapacityGene = defineGene<"energy-capacity", number>({
     };
   },
   getMutatedAllele: (allele, mutationRate) => {
-    if (Math.random() > mutationRate) {
+    if (shouldMutate(mutationRate)) {
       const mutation = Math.random() < 0.5 ? -1 : 1;
       return normalizeInRange({
         min: 1,
