@@ -1,12 +1,6 @@
 import { Phenotype } from "./phenotype";
 
-export type Allele =
-  | {
-      [key: string]: boolean | number | string;
-    }
-  | boolean
-  | number
-  | string;
+export type Allele = number;
 
 export interface GeneDefinition<TName extends string, TAllele extends Allele> {
   name: TName;

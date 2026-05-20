@@ -1,4 +1,3 @@
-import { toPairs } from "@/utils/toPairs";
 import {
   AGENT_REPRODUCTION_COST,
   AGENT_MOVE_COST,
@@ -15,15 +14,12 @@ export interface Phenotype {
   visionRange: number;
 }
 
-type GenomePair = ReturnType<typeof toPairs<Genome>>[number];
-
-function applyGenomePairToPhenotype(
+function applyGenomeEntryToPhenotype(
   phenotype: Phenotype,
-  [geneName, allele]: GenomePair,
+  entry: Genome[number],
 ): Phenotype {
-  const gene = getDefinedGene(geneName);
-
-  return gene.applyToPhenotype(phenotype, allele);
+  const gene = getDefinedGene(entry.geneName);
+  return gene.applyToPhenotype(phenotype, entry.allele);
 }
 
 export function getAgentPhenotype(genome: Genome): Phenotype {
@@ -34,8 +30,8 @@ export function getAgentPhenotype(genome: Genome): Phenotype {
     visionRange: DEFAULT_VISION_RANGE,
   };
 
-  const phenotype = toPairs(genome).reduce(
-    applyGenomePairToPhenotype,
+  const phenotype = genome.reduce(
+    (phenotype, entry) => applyGenomeEntryToPhenotype(phenotype, entry),
     defaultPhenotype,
   );
 

@@ -1,7 +1,7 @@
 import { getDefinedBehavior } from "./behavior/definitions/index";
 import { AgentContext } from "./agentContext";
 import { FoodSource } from "./foodSource";
-import { Agent, isDead } from "./agent/agent";
+import { Agent, isDead, spawnAgent } from "./agent/agent";
 import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
 import { getDistance, Vec2 } from "./position";
@@ -34,6 +34,8 @@ function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
         getDistance(foodSource.position, agent.state.position) <=
         agent.phenotype.visionRange,
     ),
+    spawnAgent: () =>
+      spawnAgent({ position: agent.state.position, genome: agent.genome }),
   };
 }
 

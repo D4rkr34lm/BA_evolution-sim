@@ -1,12 +1,11 @@
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
 import { defineAction } from "../defineAction";
-import { spawnAgent } from "@/simulation/agent/agent";
 
 export const reproduceActionDefinition = defineAction({
   name: "reproduce",
   buildAction: ({ reproductionCost }) => {
-    return ({ me, otherAgents }) => {
+    return ({ me, otherAgents, spawnAgent }) => {
       const newEnergy = me.currentEnergy - reproductionCost;
 
       if (newEnergy < 0) {
@@ -17,7 +16,7 @@ export const reproduceActionDefinition = defineAction({
           currentEnergy: newEnergy,
         };
 
-        const newAgent = spawnAgent({ position: me.position });
+        const newAgent = spawnAgent();
 
         return ok({
           me: changedAgent,

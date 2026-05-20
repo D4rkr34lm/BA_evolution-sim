@@ -1,5 +1,6 @@
 import { Agent, spawnAgent } from "./agent/agent";
 import { FoodSource, spawnFoodSource } from "./foodSource";
+import { initializeGenome } from "./genetics/genome";
 import { getUniqueRandomPositions, Vec2 } from "./position";
 import { Simulation } from "./running";
 
@@ -15,7 +16,9 @@ function spawnNewAgents({
     max: worldSize,
   });
 
-  return spawnPositions.map((position) => spawnAgent({ position }));
+  return spawnPositions.map((position) =>
+    spawnAgent({ position, genome: initializeGenome() }),
+  );
 }
 
 function spawnNewFoodSources({
