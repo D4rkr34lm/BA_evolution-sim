@@ -1,11 +1,11 @@
 import { GeneDefinition } from "./defineGene";
-import { DefinedGene } from "./definitions";
+import { DefinedGene, GeneName } from "./definitions";
 
 export type Genome = {
-  [TGeneName in DefinedGene["name"]]: DefinedGene extends GeneDefinition<
-    TGeneName,
-    infer TAllele
-  >
+  [TGeneName in GeneName]: Extract<
+    DefinedGene,
+    { name: TGeneName }
+  > extends GeneDefinition<TGeneName, infer TAllele>
     ? TAllele
     : never;
 };

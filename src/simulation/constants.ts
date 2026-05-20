@@ -15,3 +15,5 @@ export const DEFAULT_VISION_RANGE = 4;
 export const SIMULATION_WORLD_SIZE: Vec2 = { x: 20, y: 20 };
 export const SIMULATION_FOOD_AMOUNT = 10;
 export const SIMULATION_INITIAL_AGENT_COUNT = 2;
+
+export const MUTATION_RATE = 0.3;

@@ -5,19 +5,29 @@ import { Vec2 } from "../position";
 import { buildAgentStrategy, Strategy } from "../strategy";
 import { AgentState, getInitialAgentState } from "./state";
 import { buildActionMap } from "../actions/actionMap";
+import { Genome } from "../genetics/genome";
+import { buildGenomeFromParentGenome } from "../genetics/buildGenomeFromParentGenome";
 
 export interface Agent {
   id: string;
+  genome: Genome;
   phenotype: Phenotype;
   strategy: Strategy;
   actionMap: DefinedActionMap;
   state: AgentState;
 }
 
-export function spawnAgent({ position }: { position: Vec2 }): Agent {
+export function spawnAgent({
+  position,
+  parentGenome,
+}: {
+  position: Vec2;
+  parentGenome: Genome;
+}): Agent {
   const id = uid();
 
-  const phenotype = getAgentPhenotype();
+  const genome = buildGenomeFromParentGenome(parentGenome);
+  const phenotype = getAgentPhenotype(genome);
 
   const strategy = buildAgentStrategy(phenotype);
   const actionMap = buildActionMap(getDefinedActions(), phenotype);
@@ -28,6 +38,7 @@ export function spawnAgent({ position }: { position: Vec2 }): Agent {
 
   return {
     id,
+    genome,
     phenotype,
     actionMap,
     strategy,
