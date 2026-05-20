@@ -25,7 +25,7 @@ export interface SimulationRunner {
   stopSimulation: () => void;
 }
 
-const TICK_INTERVAL = 1000;
+const TICK_INTERVAL = 100;
 
 let currentTick: number = -1;
 let simulation: Simulation | null = null;

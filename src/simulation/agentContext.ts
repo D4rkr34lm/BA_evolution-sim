@@ -8,4 +8,5 @@ export interface AgentContext {
   worldSize: Vec2;
   otherAgents: Agent[];
   foodSources: FoodSource[];
+  spawnAgent: () => Agent;
 }

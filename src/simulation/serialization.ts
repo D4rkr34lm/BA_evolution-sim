@@ -1,18 +1,24 @@
 import { Agent } from "./agent/agent";
 import { AgentState } from "./agent/state";
 import { FoodSource } from "./foodSource";
+import { Genome } from "./genetics/genome";
+import { Phenotype } from "./genetics/phenotype";
 import { Vec2 } from "./position";
 import { Simulation } from "./running";
 
 export interface AgentSnapshot {
   id: string;
   state: AgentState;
+  phenotype: Phenotype;
+  genome: Genome;
 }
 
 function recordAgentSnapshot(agent: Agent): AgentSnapshot {
   return {
     id: agent.id,
     state: agent.state,
+    phenotype: agent.phenotype,
+    genome: agent.genome,
   };
 }
 
