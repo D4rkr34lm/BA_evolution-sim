@@ -50,7 +50,7 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
   static readonly styles = css`
-    #controls-container {
+    #pre-configuration-container {
       display: flex;
       flex-direction: row;
     }
@@ -60,7 +60,7 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
   render() {
     return html`
       <div id="pre-configuration-container">
-        <h3>Configuration</h2>
+        <h3>Configuration</h3>
         <sl-input
           label="Seed"
           .value="${this.form.formValue.get().seed ?? ""}"
