@@ -22,6 +22,7 @@ type PathValue<T, P extends string> = P extends `${infer Key}.${infer Rest}`
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useForm<T extends Record<string | number | symbol, any>>(
   initialValues: T,
+  onChange?: (formValue: T) => void,
 ) {
   const formValue = signal(cloneDeep(initialValues));
 
@@ -32,6 +33,7 @@ export function useForm<T extends Record<string | number | symbol, any>>(
     const old = formValue.get();
     const updated = set(old, target, value);
     formValue.set(updated);
+    onChange?.(updated);
   }
 
   return {

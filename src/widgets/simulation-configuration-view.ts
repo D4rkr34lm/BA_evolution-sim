@@ -3,7 +3,7 @@ import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
-import { SlInput } from "@shoelace-style/shoelace";
+import { SlInput, SlButton } from "@shoelace-style/shoelace";
 import { useForm } from "@/composables/useForm";
 import { SimulationInitOptions } from "@/simulation/Simulation.worker";
 import {
@@ -11,7 +11,6 @@ import {
   SIMULATION_INITIAL_AGENT_COUNT,
   SIMULATION_WORLD_SIZE,
 } from "@/simulation/constants";
-import { SlButton } from "@shoelace-style/shoelace";
 import { createInputHandler } from "@/utils/handleInput";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
@@ -26,11 +25,22 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
   */
 
   form = useForm<SimulationInitOptions>({
+    seed: "",
     worldSize: SIMULATION_WORLD_SIZE,
     initialAgentsAmount: SIMULATION_INITIAL_AGENT_COUNT,
     initialFoodSourcesAmount: SIMULATION_FOOD_AMOUNT,
   });
   simulationStore = useSimulationStore();
+
+  emitStartSimulation() {
+    this.dispatchEvent(
+      new CustomEvent("start-simulation", {
+        detail: this.form.formValue.get(),
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
   /** Register the classes of custom elements to use in the Shadow DOM here.
    * @example
@@ -38,13 +48,13 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
    * ...
    *   static scopedElements = {"sl-button": SlButton}
    **/
-  static scopedElements = {
+  static readonly scopedElements = {
     "sl-input": SlInput,
     "sl-button": SlButton,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
-  static styles = css`
+  static readonly styles = css`
     #root {
       display: flex;
       flex-direction: column;
@@ -96,12 +106,7 @@ export class SimulationConfigurationView extends SignalWatcher(LitElementWw) {
             this.form.updateFormValue("initialFoodSourcesAmount", Number(e)),
           )}"
         ></sl-input>
-        <sl-button
-          @click="${() =>
-            this.simulationStore.initializeNewSimulation(
-              this.form.formValue.get(),
-            )}"
-        >
+        <sl-button @click="${() => this.emitStartSimulation()}">
           Start simulation
         </sl-button>
       </div>

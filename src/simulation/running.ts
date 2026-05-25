@@ -125,7 +125,7 @@ export function runSimulation(simulation: Simulation): Simulation {
         const context = getAgentContext(agent, updatedSimulation);
         const newContext = runAgent(agent, context);
         console.log(
-          "DEV - New context after running agent:",
+          "INFO - New context after running agent:",
           agent.id,
           newContext,
         );
