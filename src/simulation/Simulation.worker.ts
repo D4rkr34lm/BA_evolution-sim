@@ -4,8 +4,10 @@ import { recordSimulationSnapshot, SimulationSnapshot } from "./serialization";
 import { initializeSimulation } from "./initialization";
 import { Vec2 } from "./position";
 import * as Comlink from "comlink";
+import { setRandomSeed } from "@/utils/random";
 
 export interface SimulationInitOptions {
+  seed: string;
   worldSize: Vec2;
   initialAgentsAmount: number;
   initialFoodSourcesAmount: number;
@@ -32,6 +34,8 @@ let simulation: Simulation | null = null;
 let runTimeoutId: number | null;
 
 function initializeNewSimulation(options: SimulationInitOptions) {
+  console.log("INFO - Initializing new simulation with options", options);
+  setRandomSeed(options.seed);
   const newSimulation = initializeSimulation(options);
   simulation = newSimulation;
   currentTick = 0;

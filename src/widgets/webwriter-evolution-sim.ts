@@ -1,12 +1,17 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { SimulationRunView } from "./simulation-run-view";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { hasValue } from "@/utils/typeGuards";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { when } from "lit/directives/when.js";
 import { SimulationConfigurationView } from "./simulation-configuration-view";
+import {
+  ConfigurationChangeEvent,
+  SimulationPreConfigurationAside,
+} from "./simulation-pre-configuration-aside";
+import { SimulationInitOptions } from "@/simulation/Simulation.worker";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -27,28 +32,46 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
    * ...
    *   static scopedElements = {"sl-button": SlButton}
    **/
-  static scopedElements = {
+  static readonly scopedElements = {
     "simulation-run-view": SimulationRunView,
     "simulation-configuration-view": SimulationConfigurationView,
+    "simulation-pre-configuration-aside": SimulationPreConfigurationAside,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
-  static styles = css`
+  static readonly styles = css`
     #root {
       display: flex;
       flex-direction: column;
     }
   `;
 
+  @property({ attribute: true })
+  accessor simulationPreConfiguration: Partial<SimulationInitOptions> | null =
+    null;
+
   /** Define your template here and return it. */
   render() {
     return html`
       <div id="root">
+        <simulation-pre-configuration-aside
+          part="options"
+          @configuration-change="${(e: ConfigurationChangeEvent) => {
+            this.simulationPreConfiguration = e.detail;
+          }}"
+        ></simulation-pre-configuration-aside>
         ${when(
           hasValue(this.simulationStore.currentActiveSimulationData.get()),
           () => html` <simulation-run-view></simulation-run-view> `,
           () => html`
-            <simulation-configuration-view></simulation-configuration-view>
+            <simulation-configuration-view
+              @start-simulation="${(e: CustomEvent) => {
+                this.simulationStore.initializeNewSimulation({
+                  ...e.detail,
+                  ...this.simulationPreConfiguration,
+                });
+              }}"
+            ></simulation-configuration-view>
           `,
         )}
       </div>
