@@ -2,6 +2,7 @@ import { SimulationMetadata } from "@/simulation/running";
 import { SimulationSnapshot } from "@/simulation/serialization";
 import { computed, signal } from "@lit-labs/signals";
 import * as Comlink from "comlink";
+import { cloneDeep } from "lodash-es";
 
 import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
 import {
@@ -32,7 +33,6 @@ const SimulationWorker = Comlink.wrap<SimulationRunner>(
 
 const simulationMetadata = signal<SimulationMetadata | null>(null);
 const currentSnapshot = signal<SimulationSnapshot | null>(null);
-const lastInitOptions = signal<SimulationInitOptions | null>(null);
 const simulationStatus = signal<SimulationStatus>("uninitialized");
 const simulationSpeed = signal(1);
 const isRunning = computed(() => simulationStatus.get() === "running");
@@ -59,7 +59,6 @@ async function initializeNewSimulation(options: SimulationInitOptions) {
   await SimulationWorker.stopSimulation();
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
-  lastInitOptions.set(options);
   simulationMetadata.set(initResult.metadata);
   currentSnapshot.set(initResult.initialSnapshot);
   simulationStatus.set("ready");
@@ -95,10 +94,14 @@ async function stopSimulation() {
 }
 
 async function resetSimulation() {
-  const options = lastInitOptions.get();
-
-  if (hasValue(options)) {
-    await initializeNewSimulation(options);
+  try {
+    const { initialSnapshot, metadata } =
+      await SimulationWorker.resetSimulation();
+    simulationMetadata.set(metadata);
+    currentSnapshot.set(initialSnapshot);
+    simulationStatus.set("ready");
+  } catch (error) {
+    console.error("ERROR - Failed to reset simulation", error);
   }
 }
 
