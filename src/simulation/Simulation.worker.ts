@@ -25,13 +25,15 @@ export interface SimulationRunner {
     onTickFinished: (snapshot: SimulationSnapshot) => void,
   ) => void;
   stopSimulation: () => void;
+  setTickInterval: (intervalMs: number) => void;
 }
 
-const TICK_INTERVAL = 100;
+const DEFAULT_TICK_INTERVAL = 100;
 
 let currentTick: number = -1;
 let simulation: Simulation | null = null;
 let runTimeoutId: number | null;
+let tickInterval = DEFAULT_TICK_INTERVAL;
 
 function initializeNewSimulation(options: SimulationInitOptions) {
   console.log("INFO - Initializing new simulation with options", options);
@@ -72,7 +74,7 @@ function startSimulation(
       console.log("INFO - running next tick");
       const snapshot = runSimulationTick();
       onTickFinished(snapshot);
-      runTimeoutId = setTimeout(runNextTick, TICK_INTERVAL);
+      runTimeoutId = setTimeout(runNextTick, tickInterval);
     };
 
     runNextTick();
@@ -86,10 +88,15 @@ function stopSimulation() {
   }
 }
 
+function setTickInterval(intervalMs: number) {
+  tickInterval = Math.max(1, intervalMs);
+}
+
 export const SimulationRunner: SimulationRunner = {
   initializeNewSimulation,
   startSimulation,
   stopSimulation,
+  setTickInterval,
   runTick() {
     if (hasValue(runTimeoutId)) {
       throw new Error(

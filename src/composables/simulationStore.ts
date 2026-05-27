@@ -10,6 +10,13 @@ import {
 } from "../simulation/Simulation.worker";
 import { hasValue } from "@/utils/typeGuards";
 
+export type SimulationStatus =
+  | "uninitialized"
+  | "ready"
+  | "running"
+  | "paused"
+  | "completed";
+
 const SimulationWorker = Comlink.wrap<SimulationRunner>(
   new Worker(
     URL.createObjectURL(
@@ -25,7 +32,11 @@ const SimulationWorker = Comlink.wrap<SimulationRunner>(
 
 const simulationMetadata = signal<SimulationMetadata | null>(null);
 const currentSnapshot = signal<SimulationSnapshot | null>(null);
-const isRunning = signal(false);
+const lastInitOptions = signal<SimulationInitOptions | null>(null);
+const simulationStatus = signal<SimulationStatus>("uninitialized");
+const simulationSpeed = signal(1);
+const isRunning = computed(() => simulationStatus.get() === "running");
+const DEFAULT_TICK_INTERVAL = 100;
 
 const currentActiveSimulationData = computed(() => {
   const metadata = simulationMetadata.get();
@@ -45,32 +56,55 @@ const currentActiveSimulationData = computed(() => {
 async function initializeNewSimulation(options: SimulationInitOptions) {
   console.log("INFO - initialized new simulation with options", options);
 
+  await SimulationWorker.stopSimulation();
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
+  lastInitOptions.set(options);
   simulationMetadata.set(initResult.metadata);
   currentSnapshot.set(initResult.initialSnapshot);
+  simulationStatus.set("ready");
 }
 
 async function runNextTick() {
+  if (isRunning.get() || !hasValue(currentSnapshot.get())) {
+    return;
+  }
+
   const tickResult = await SimulationWorker.runTick();
 
   currentSnapshot.set(tickResult);
+  simulationStatus.set("paused");
 }
 
 async function startSimulation() {
-  if (!isRunning.get()) {
+  if (!isRunning.get() && hasValue(currentSnapshot.get())) {
+    simulationStatus.set("running");
     await SimulationWorker.startSimulation(
       Comlink.proxy((snapshot) => {
         currentSnapshot.set(snapshot);
       }),
     );
-    isRunning.set(true);
   }
 }
 
 async function stopSimulation() {
   await SimulationWorker.stopSimulation();
-  isRunning.set(false);
+  simulationStatus.set(
+    hasValue(currentSnapshot.get()) ? "paused" : "uninitialized",
+  );
+}
+
+async function resetSimulation() {
+  const options = lastInitOptions.get();
+
+  if (hasValue(options)) {
+    await initializeNewSimulation(options);
+  }
+}
+
+async function setSimulationSpeed(speed: number) {
+  simulationSpeed.set(speed);
+  await SimulationWorker.setTickInterval(DEFAULT_TICK_INTERVAL / speed);
 }
 
 export function useSimulationStore() {
@@ -79,7 +113,11 @@ export function useSimulationStore() {
     runNextTick,
     startSimulation,
     stopSimulation,
+    resetSimulation,
+    setSimulationSpeed,
     currentActiveSimulationData,
+    simulationStatus,
+    simulationSpeed,
     isRunning,
   };
 }

@@ -52,7 +52,7 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
   static readonly styles = css`
     #pre-configuration-container {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
     }
   `;
 
