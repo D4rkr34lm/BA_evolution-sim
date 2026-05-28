@@ -35,13 +35,14 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     #root {
       display: flex;
       flex-direction: column;
+      gap: 1rem;
     }
 
     #bottom-bar {
       display: flex;
-      flex-direction: row;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      gap: 1rem;
     }
   `;
 
@@ -52,11 +53,6 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
         <simulation-state-render></simulation-state-render>
         <div id="bottom-bar">
           <simulation-controls-bar></simulation-controls-bar>
-          <span>
-            Current Tick:
-            ${this.simulationStore.currentActiveSimulationData.get()
-              ?.currentTick ?? -1}
-          </span>
         </div>
       </div>
     `;

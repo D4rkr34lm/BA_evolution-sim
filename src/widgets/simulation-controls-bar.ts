@@ -36,16 +36,25 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
     #controls-container {
       display: flex;
       flex-direction: row;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
     }
   `;
 
   /** Define your template here and return it. */
   render() {
+    const status = this.simulationStore.simulationStatus.get();
+    const hasActiveSimulation = status !== "uninitialized";
+    const isRunning = status === "running";
+    const selectedSpeed = this.simulationStore.simulationSpeed.get();
+    const speedOptions = [0.25, 0.5, 1, 2, 5];
+
     return html`
       <div id="controls-container">
         <sl-button-group>
           ${when(
-            this.simulationStore.isRunning.get(),
+            isRunning,
             () => html`
               <sl-button @click=${() => this.simulationStore.stopSimulation()}>
                 <sl-icon name="pause"></sl-icon>
@@ -59,12 +68,35 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
               </sl-button>
             `,
           )}
-          <!-- TODO implement reset / perhaps only after seeding mechanism ?
-          <sl-button>
+          <sl-button
+            ?disabled=${!hasActiveSimulation || isRunning}
+            @click=${() => this.simulationStore.runNextTick()}
+          >
+            <sl-icon name="skip-end"></sl-icon>
+            Step
+          </sl-button>
+        </sl-button-group>
+        <sl-button-group>
+          <sl-button
+            ?disabled=${!hasActiveSimulation}
+            @click=${() => this.simulationStore.resetSimulation()}
+          >
             <sl-icon name="arrow-clockwise"></sl-icon>
             Reset
           </sl-button>
-        -->
+        </sl-button-group>
+        <sl-button-group>
+          ${speedOptions.map(
+            (speed) => html`
+              <sl-button
+                variant=${selectedSpeed === speed ? "primary" : "default"}
+                ?disabled=${!hasActiveSimulation}
+                @click=${() => this.simulationStore.setSimulationSpeed(speed)}
+              >
+                ${speed}x
+              </sl-button>
+            `,
+          )}
         </sl-button-group>
       </div>
     `;

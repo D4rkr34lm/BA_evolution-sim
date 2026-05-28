@@ -5,6 +5,7 @@ import { initializeSimulation } from "./initialization";
 import { Vec2 } from "./position";
 import * as Comlink from "comlink";
 import { setRandomSeed } from "@/utils/random";
+import { cloneDeep } from "lodash-es";
 
 export interface SimulationInitOptions {
   seed: string;
@@ -18,6 +19,10 @@ export interface SimulationRunner {
     metadata: SimulationMetadata;
     initialSnapshot: SimulationSnapshot;
   };
+  resetSimulation: () => {
+    metadata: SimulationMetadata;
+    initialSnapshot: SimulationSnapshot;
+  };
 
   runTick: () => SimulationSnapshot;
 
@@ -25,23 +30,47 @@ export interface SimulationRunner {
     onTickFinished: (snapshot: SimulationSnapshot) => void,
   ) => void;
   stopSimulation: () => void;
+  setTickInterval: (intervalMs: number) => void;
 }
 
-const TICK_INTERVAL = 100;
+const DEFAULT_TICK_INTERVAL = 100;
 
 let currentTick: number = -1;
 let simulation: Simulation | null = null;
+let initialSimulation: Simulation | null = null;
+
 let runTimeoutId: number | null;
+let tickInterval = DEFAULT_TICK_INTERVAL;
 
 function initializeNewSimulation(options: SimulationInitOptions) {
   console.log("INFO - Initializing new simulation with options", options);
+  stopSimulation();
   setRandomSeed(options.seed);
+
   const newSimulation = initializeSimulation(options);
   simulation = newSimulation;
   currentTick = 0;
+  initialSimulation = cloneDeep(newSimulation);
+
   return {
     metadata: newSimulation.metadata,
     initialSnapshot: recordSimulationSnapshot(currentTick, newSimulation),
+  };
+}
+
+function resetSimulation() {
+  if (hasNoValue(initialSimulation)) {
+    throw new Error("No simulation to reset");
+  }
+
+  stopSimulation();
+
+  simulation = cloneDeep(initialSimulation);
+  currentTick = 0;
+
+  return {
+    metadata: simulation.metadata,
+    initialSnapshot: recordSimulationSnapshot(currentTick, simulation),
   };
 }
 
@@ -72,10 +101,10 @@ function startSimulation(
       console.log("INFO - running next tick");
       const snapshot = runSimulationTick();
       onTickFinished(snapshot);
-      runTimeoutId = setTimeout(runNextTick, TICK_INTERVAL);
+      runTimeoutId = setTimeout(runNextTick, tickInterval);
     };
 
-    runNextTick();
+    runTimeoutId = setTimeout(runNextTick, tickInterval);
   }
 }
 
@@ -86,10 +115,16 @@ function stopSimulation() {
   }
 }
 
+function setTickInterval(intervalMs: number) {
+  tickInterval = Math.max(1, intervalMs);
+}
+
 export const SimulationRunner: SimulationRunner = {
   initializeNewSimulation,
+  resetSimulation,
   startSimulation,
   stopSimulation,
+  setTickInterval,
   runTick() {
     if (hasValue(runTimeoutId)) {
       throw new Error(

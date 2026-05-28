@@ -12,8 +12,8 @@ export const FOOD_RECOVERY_RATE = 10;
 export const MAX_VISION_RANGE = 10;
 export const DEFAULT_VISION_RANGE = 4;
 
-export const SIMULATION_WORLD_SIZE: Vec2 = { x: 20, y: 20 };
-export const SIMULATION_FOOD_AMOUNT = 10;
-export const SIMULATION_INITIAL_AGENT_COUNT = 2;
+export const SIMULATION_WORLD_SIZE: Vec2 = { x: 50, y: 25 };
+export const SIMULATION_FOOD_AMOUNT = 20;
+export const SIMULATION_INITIAL_AGENT_COUNT = 5;
 
 export const MUTATION_RATE = 0.3;
