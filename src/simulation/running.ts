@@ -1,10 +1,10 @@
 import { getDefinedBehavior } from "./behavior/definitions/index";
 import { AgentContext } from "./agentContext";
-import { FoodSource } from "./foodSource";
+import { FoodSource, spawnFoodSource } from "./foodSource";
 import { Agent, isDead, spawnAgent } from "./agent/agent";
 import { cloneDeep, has } from "lodash-es";
 import { buildEnrichedActionDeciderMap } from "./actions/actionDeciderMap";
-import { getDistance, Vec2 } from "./position";
+import { getDistance, isInBounds, Vec2 } from "./position";
 import { hasValue } from "@/utils/typeGuards";
 import { getBehaviorToExecute } from "./strategy";
 import { getGenomeFromReproduction } from "./genetics/reproduction";
@@ -17,6 +17,23 @@ export interface Simulation {
 
 export interface SimulationMetadata {
   worldSize: Vec2;
+}
+
+export function addFoodSource(
+  simulation: Simulation,
+  position: Vec2,
+): Simulation {
+  if (!isInBounds(position, simulation.metadata.worldSize)) {
+    console.warn(
+      `Tried to add food source out of bounds at position ${position.x}, ${position.y}`,
+    );
+    return simulation;
+  }
+
+  return {
+    ...simulation,
+    foodSources: [...simulation.foodSources, spawnFoodSource({ position })],
+  };
 }
 
 function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {

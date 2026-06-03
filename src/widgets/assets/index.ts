@@ -4,6 +4,8 @@ import AgentSpriteData from "./MockAgentSprite.png";
 import BackgroundTileData from "./MockBackgroundTile.png";
 import FoodSourceSpriteData from "./MockFoodSourceSprite.png";
 
+export { AgentSpriteData, FoodSourceSpriteData };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toTexture(data: any): Texture {
   const image = new Image();

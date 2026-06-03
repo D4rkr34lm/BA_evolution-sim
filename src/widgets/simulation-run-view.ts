@@ -5,6 +5,7 @@ import { SimulationStateRender } from "./simulation-state-render";
 import { SimulationControlsBar } from "./simulation-controls-bar";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
+import { SimulationManualTools } from "./simulation-manual-tools";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -18,6 +19,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   */
 
   simulationStore = useSimulationStore();
+  private readonly widgetId = crypto.randomUUID();
 
   /** Register the classes of custom elements to use in the Shadow DOM here.
    * @example
@@ -28,6 +30,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   static scopedElements = {
     "simulation-state-render": SimulationStateRender,
     "simulation-controls-bar": SimulationControlsBar,
+    "simulation-manual-tools": SimulationManualTools,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -50,9 +53,14 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   render() {
     return html`
       <div id="root">
-        <simulation-state-render></simulation-state-render>
+        <simulation-state-render
+          .widgetId=${this.widgetId}
+        ></simulation-state-render>
         <div id="bottom-bar">
           <simulation-controls-bar></simulation-controls-bar>
+          <simulation-manual-tools
+            .widgetId=${this.widgetId}
+          ></simulation-manual-tools>
         </div>
       </div>
     `;

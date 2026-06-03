@@ -1,6 +1,6 @@
 import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement, query } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
 import {
   AgentSnapshot,
@@ -12,6 +12,7 @@ import { hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
 import { scaleVector, Vec2 } from "@/simulation/position";
+import { SIMULATION_TILE_SIZE } from "@/simulation/rendering";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { effect } from "signal-utils/subtle/microtask-effect";
 
@@ -20,10 +21,8 @@ import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
 
-const BASE_TILE_SIZE = 16;
-
 function toTilePosition(vec: Vec2): Vec2 {
-  return scaleVector(vec, BASE_TILE_SIZE);
+  return scaleVector(vec, SIMULATION_TILE_SIZE);
 }
 interface EntitySnapshotRenderer<TSnapshot> {
   root: Container;
@@ -36,8 +35,8 @@ class BackgroundRenderer {
 
   constructor() {
     const tileScale: Vec2 = {
-      x: BASE_TILE_SIZE / Textures.backgroundTile.width,
-      y: BASE_TILE_SIZE / Textures.backgroundTile.height,
+      x: SIMULATION_TILE_SIZE / Textures.backgroundTile.width,
+      y: SIMULATION_TILE_SIZE / Textures.backgroundTile.height,
     };
 
     this.backgroundTilesSprite = new TilingSprite({
@@ -52,8 +51,8 @@ class BackgroundRenderer {
 
   update(worldSize: Vec2) {
     const backgroundTileSize = {
-      width: BASE_TILE_SIZE * worldSize.x,
-      height: BASE_TILE_SIZE * worldSize.y,
+      width: SIMULATION_TILE_SIZE * worldSize.x,
+      height: SIMULATION_TILE_SIZE * worldSize.y,
     };
 
     this.backgroundTilesSprite.setSize(backgroundTileSize);
@@ -69,8 +68,8 @@ class AgentRenderer implements EntitySnapshotRenderer<AgentSnapshot> {
     });
     this.bodySprite = new Sprite({
       texture: Textures.agent,
-      width: BASE_TILE_SIZE,
-      height: BASE_TILE_SIZE,
+      width: SIMULATION_TILE_SIZE,
+      height: SIMULATION_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
   }
@@ -93,8 +92,8 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
     });
     this.bodySprite = new Sprite({
       texture: Textures.foodSource,
-      width: BASE_TILE_SIZE,
-      height: BASE_TILE_SIZE,
+      width: SIMULATION_TILE_SIZE,
+      height: SIMULATION_TILE_SIZE,
     });
     this.root.addChild(this.bodySprite);
   }
@@ -195,9 +194,66 @@ export class SimulationStateRender extends LitElementWw {
   @query("#simulation-container")
   accessor canvasContainer!: HTMLDivElement;
 
+  @property({ attribute: "widget-id" })
+  accessor widgetId = "";
+
   app: Application | null = null;
   renderer = useSimulationRenderer();
   unwatch: (() => void) | null = null;
+
+  private getTilePositionFromEvent(event: DragEvent): Vec2 | null {
+    if (!hasValue(this.app)) {
+      return null;
+    }
+
+    const bounds = this.canvasContainer.getBoundingClientRect();
+    const localX = event.clientX - bounds.left;
+    const localY = event.clientY - bounds.top;
+    const scaleX = this.app.screen.width / bounds.width;
+    const scaleY = this.app.screen.height / bounds.height;
+
+    return {
+      x: Math.floor((localX * scaleX) / SIMULATION_TILE_SIZE),
+      y: Math.floor((localY * scaleY) / SIMULATION_TILE_SIZE),
+    };
+  }
+
+  private getDraggedManualTool() {
+    const dragState = this.simulationStore.manualToolDnd.getDraggedItem();
+
+    if (dragState?.originId === this.widgetId) {
+      return dragState.item;
+    } else {
+      return null;
+    }
+  }
+
+  private handleDragOver(event: DragEvent) {
+    if (hasValue(this.getDraggedManualTool())) {
+      event.preventDefault();
+
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    }
+  }
+
+  private handleDrop(event: DragEvent) {
+    const tool = this.getDraggedManualTool();
+    const tilePosition = this.getTilePositionFromEvent(event);
+
+    if (!hasValue(tool) || !hasValue(tilePosition)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (tool === "add-food-source") {
+      void this.simulationStore.addFoodSource(tilePosition);
+    }
+
+    this.simulationStore.manualToolDnd.endDrag();
+  }
 
   private async setupCanvas() {
     const app = new Application();
@@ -227,7 +283,13 @@ export class SimulationStateRender extends LitElementWw {
 
   /** Define your template here and return it. */
   render() {
-    return html` <div id="simulation-container"></div> `;
+    return html`
+      <div
+        id="simulation-container"
+        @dragover=${this.handleDragOver}
+        @drop=${this.handleDrop}
+      ></div>
+    `;
   }
 
   async firstUpdated() {

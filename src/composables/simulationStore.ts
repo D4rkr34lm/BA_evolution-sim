@@ -10,6 +10,13 @@ import {
   SimulationInitOptions,
 } from "../simulation/Simulation.worker";
 import { hasValue } from "@/utils/typeGuards";
+import { Vec2 } from "@/simulation/position";
+import { createDndStore } from "./useDnd";
+
+export type ManualSimulationTool =
+  | "add-food-source"
+  | "add-agent"
+  | "remove-entity";
 
 export type SimulationStatus =
   | "uninitialized"
@@ -35,6 +42,7 @@ const simulationMetadata = signal<SimulationMetadata | null>(null);
 const currentSnapshot = signal<SimulationSnapshot | null>(null);
 const simulationStatus = signal<SimulationStatus>("uninitialized");
 const simulationSpeed = signal(1);
+const manualToolDnd = createDndStore<ManualSimulationTool>();
 const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
 
@@ -75,6 +83,16 @@ async function runNextTick() {
   simulationStatus.set("paused");
 }
 
+async function addFoodSource(position: Vec2) {
+  if (!hasValue(currentSnapshot.get())) {
+    return;
+  }
+
+  const snapshot = await SimulationWorker.addFoodSource(position);
+
+  currentSnapshot.set(snapshot);
+}
+
 async function startSimulation() {
   if (!isRunning.get() && hasValue(currentSnapshot.get())) {
     simulationStatus.set("running");
@@ -113,6 +131,7 @@ async function setSimulationSpeed(speed: number) {
 export function useSimulationStore() {
   return {
     initializeNewSimulation,
+    addFoodSource,
     runNextTick,
     startSimulation,
     stopSimulation,
@@ -121,6 +140,7 @@ export function useSimulationStore() {
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,
+    manualToolDnd,
     isRunning,
   };
 }

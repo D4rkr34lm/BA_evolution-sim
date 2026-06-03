@@ -47,6 +47,15 @@ export function getDirectionTowards(from: Vec2, to: Vec2): Direction {
   }
 }
 
+export function isInBounds(position: Vec2, worldSize: Vec2): boolean {
+  return (
+    position.x >= 0 &&
+    position.y >= 0 &&
+    position.x < worldSize.x &&
+    position.y < worldSize.y
+  );
+}
+
 export function getUniqueRandomPositions({
   amount,
   max,

@@ -1,4 +1,4 @@
-import { Direction, addVectors } from "@/simulation/position";
+import { Direction, addVectors, isInBounds } from "@/simulation/position";
 import { err, ok } from "neverthrow";
 import { ACTION_ERRORS } from "../actionErrors";
 import { defineAction } from "../defineAction";
@@ -15,12 +15,7 @@ export const moveActionDefinition = defineAction({
       } else {
         const newPosition = addVectors(me.position, direction);
 
-        if (
-          newPosition.x < 0 ||
-          newPosition.y < 0 ||
-          newPosition.x >= worldSize.x ||
-          newPosition.y >= worldSize.y
-        ) {
+        if (!isInBounds(newPosition, worldSize)) {
           return err(ACTION_ERRORS.ERR_OUT_OF_BOUNDS);
         } else if (
           otherAgents.some((agent) =>
