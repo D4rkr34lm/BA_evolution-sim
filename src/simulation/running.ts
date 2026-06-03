@@ -8,6 +8,7 @@ import { getDistance, isInBounds, Vec2 } from "./position";
 import { hasValue } from "@/utils/typeGuards";
 import { getBehaviorToExecute } from "./strategy";
 import { getGenomeFromReproduction } from "./genetics/reproduction";
+import { SIMULATION_ENTITY_TOPMOST_ORDER } from "./entityPresentation";
 
 export interface Simulation {
   metadata: SimulationMetadata;
@@ -23,9 +24,20 @@ export function addFoodSource(
   simulation: Simulation,
   position: Vec2,
 ): Simulation {
-  if (!isInBounds(position, simulation.metadata.worldSize)) {
+  const hasFoodSourceAtPosition = simulation.foodSources.some(
+    (foodSource) =>
+      foodSource.position.x === position.x &&
+      foodSource.position.y === position.y,
+  );
+
+  if (
+    !Number.isInteger(position.x) ||
+    !Number.isInteger(position.y) ||
+    !isInBounds(position, simulation.metadata.worldSize) ||
+    hasFoodSourceAtPosition
+  ) {
     console.warn(
-      `Tried to add food source out of bounds at position ${position.x}, ${position.y}`,
+      `Tried to add food source at invalid position ${position.x}, ${position.y}`,
     );
     return simulation;
   }
@@ -34,6 +46,51 @@ export function addFoodSource(
     ...simulation,
     foodSources: [...simulation.foodSources, spawnFoodSource({ position })],
   };
+}
+
+export function removeEntityAt(
+  simulation: Simulation,
+  position: Vec2,
+): Simulation {
+  if (!isInBounds(position, simulation.metadata.worldSize)) {
+    return simulation;
+  }
+
+  for (const entityKind of SIMULATION_ENTITY_TOPMOST_ORDER) {
+    if (entityKind === "agent") {
+      const agentToRemove = simulation.agents.find(
+        (agent) =>
+          agent.state.position.x === position.x &&
+          agent.state.position.y === position.y,
+      );
+
+      if (hasValue(agentToRemove)) {
+        return {
+          ...simulation,
+          agents: simulation.agents.filter(
+            (agent) => agent.id !== agentToRemove.id,
+          ),
+        };
+      }
+    } else if (entityKind === "food-source") {
+      const foodSourceToRemove = simulation.foodSources.find(
+        (foodSource) =>
+          foodSource.position.x === position.x &&
+          foodSource.position.y === position.y,
+      );
+
+      if (hasValue(foodSourceToRemove)) {
+        return {
+          ...simulation,
+          foodSources: simulation.foodSources.filter(
+            (foodSource) => foodSource.id !== foodSourceToRemove.id,
+          ),
+        };
+      }
+    }
+  }
+
+  return simulation;
 }
 
 function getAgentContext(agent: Agent, simulation: Simulation): AgentContext {
