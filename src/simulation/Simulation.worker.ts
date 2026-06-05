@@ -1,5 +1,6 @@
 import { hasNoValue, hasValue } from "@/utils/typeGuards";
 import {
+  addAgent,
   addFoodSource,
   removeEntityAt,
   runSimulation,
@@ -33,6 +34,7 @@ export interface SimulationRunner {
   runTick: () => SimulationSnapshot;
 
   addFoodSource: (position: Vec2) => SimulationSnapshot;
+  addAgent: (position: Vec2) => SimulationSnapshot;
   removeEntityAt: (position: Vec2) => SimulationSnapshot;
 
   startSimulation: (
@@ -109,6 +111,16 @@ function addFoodSourceToSimulation(position: Vec2) {
   return recordSimulationSnapshot(currentTick, simulation);
 }
 
+function addAgentToSimulation(position: Vec2) {
+  if (hasNoValue(simulation) || currentTick < 0) {
+    throw new Error("No active simulation to edit");
+  }
+
+  simulation = addAgent(simulation, position);
+
+  return recordSimulationSnapshot(currentTick, simulation);
+}
+
 function removeEntityAtPosition(position: Vec2) {
   if (hasNoValue(simulation) || currentTick < 0) {
     throw new Error("No active simulation to edit");
@@ -155,6 +167,7 @@ export const SimulationRunner: SimulationRunner = {
   stopSimulation,
   setTickInterval,
   addFoodSource: addFoodSourceToSimulation,
+  addAgent: addAgentToSimulation,
   removeEntityAt: removeEntityAtPosition,
   runTick() {
     if (hasValue(runTimeoutId)) {

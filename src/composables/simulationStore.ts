@@ -94,6 +94,16 @@ async function addFoodSource(position: Vec2) {
   currentSnapshot.set(snapshot);
 }
 
+async function addAgent(position: Vec2) {
+  if (!hasValue(currentSnapshot.get())) {
+    return;
+  }
+
+  const snapshot = await SimulationWorker.addAgent(position);
+
+  currentSnapshot.set(snapshot);
+}
+
 async function removeEntityAt(position: Vec2) {
   if (!hasValue(currentSnapshot.get())) {
     return;
@@ -151,6 +161,7 @@ export function useSimulationStore() {
   return {
     initializeNewSimulation,
     addFoodSource,
+    addAgent,
     removeEntityAt,
     runNextTick,
     startSimulation,

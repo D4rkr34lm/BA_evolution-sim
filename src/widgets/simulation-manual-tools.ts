@@ -66,7 +66,7 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
   private startDrag(
     event: DragEvent,
     tool: ManualSimulationTool,
-    dragImageSource?: string,
+    dragImage?: HTMLElement,
   ) {
     this.simulationStore.setActiveManualTool(null);
     this.simulationStore.manualToolDnd.startDrag(tool, this.widgetId);
@@ -74,10 +74,12 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = "copy";
 
-      if (dragImageSource) {
-        const dragImage = new Image(SIMULATION_TILE_SIZE, SIMULATION_TILE_SIZE);
-        dragImage.src = dragImageSource;
-        event.dataTransfer.setDragImage(dragImage, 8, 8);
+      if (dragImage) {
+        event.dataTransfer.setDragImage(
+          dragImage,
+          SIMULATION_TILE_SIZE / 2,
+          SIMULATION_TILE_SIZE / 2,
+        );
       }
     }
   }
@@ -107,8 +109,17 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
         size="small"
         draggable=${disabled ? "false" : "true"}
         ?disabled=${disabled}
-        @dragstart=${(event: DragEvent) =>
-          this.startDrag(event, tool, spriteSource)}
+        @dragstart=${(event: DragEvent) => {
+          const dragImage = (event.currentTarget as HTMLElement).querySelector(
+            ".tool-sprite",
+          );
+
+          this.startDrag(
+            event,
+            tool,
+            dragImage instanceof HTMLElement ? dragImage : undefined,
+          );
+        }}
         @dragend=${() => this.endDrag()}
       >
         <span class="tool-content">
@@ -151,7 +162,6 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
           label: "Agent",
           tool: "add-agent",
           spriteSource: AgentSpriteData,
-          disabled: true,
         })}
         ${this.renderRemoveToolButton()}
       </div>

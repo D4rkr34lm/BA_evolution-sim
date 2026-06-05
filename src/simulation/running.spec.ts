@@ -1,5 +1,6 @@
 import { assert, describe, expect, it } from "vitest";
 import {
+  addAgent,
   addFoodSource,
   removeEntityAt,
   runSimulation,
@@ -134,6 +135,50 @@ describe("running simulation", () => {
     const updatedSimulation = addFoodSource(simulation, { x: 1, y: 2 });
 
     expect(updatedSimulation.foodSources).toHaveLength(1);
+  });
+
+  it("adds an agent at a valid position with a default genome", () => {
+    const position = { x: 1, y: 2 };
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, position);
+
+    expect(updatedSimulation.agents).toHaveLength(1);
+    expect(updatedSimulation.agents[0]?.state.position).toEqual(position);
+    expect(updatedSimulation.agents[0]?.genome).toEqual(initializeGenome());
+  });
+
+  it("does not add an agent outside negative bounds", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: -1, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent outside the world size", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: 10, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent at a non-integer position", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: 1.5, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent at an occupied agent position", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({ agents: [agent] });
+
+    const updatedSimulation = addAgent(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.agents).toHaveLength(1);
   });
 
   it("removes a food source at a position", () => {

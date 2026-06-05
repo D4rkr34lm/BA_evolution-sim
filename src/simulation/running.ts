@@ -9,6 +9,7 @@ import { hasValue } from "@/utils/typeGuards";
 import { getBehaviorToExecute } from "./strategy";
 import { getGenomeFromReproduction } from "./genetics/reproduction";
 import { SIMULATION_ENTITY_TOPMOST_ORDER } from "./entityPresentation";
+import { initializeGenome } from "./genetics/genome";
 
 export interface Simulation {
   metadata: SimulationMetadata;
@@ -45,6 +46,34 @@ export function addFoodSource(
   return {
     ...simulation,
     foodSources: [...simulation.foodSources, spawnFoodSource({ position })],
+  };
+}
+
+export function addAgent(simulation: Simulation, position: Vec2): Simulation {
+  const hasAgentAtPosition = simulation.agents.some(
+    (agent) =>
+      agent.state.position.x === position.x &&
+      agent.state.position.y === position.y,
+  );
+
+  if (
+    !Number.isInteger(position.x) ||
+    !Number.isInteger(position.y) ||
+    !isInBounds(position, simulation.metadata.worldSize) ||
+    hasAgentAtPosition
+  ) {
+    console.warn(
+      `Tried to add agent at invalid position ${position.x}, ${position.y}`,
+    );
+    return simulation;
+  }
+
+  return {
+    ...simulation,
+    agents: [
+      ...simulation.agents,
+      spawnAgent({ position, genome: initializeGenome() }),
+    ],
   };
 }
 

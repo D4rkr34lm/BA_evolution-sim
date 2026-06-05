@@ -265,10 +265,12 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
     event.preventDefault();
 
     if (tool === "add-food-source") {
-      void this.simulationStore.addFoodSource(tilePosition);
+      this.simulationStore.addFoodSource(tilePosition);
+    } else if (tool === "add-agent") {
+      this.simulationStore.addAgent(tilePosition);
+    } else {
+      this.simulationStore.manualToolDnd.endDrag();
     }
-
-    this.simulationStore.manualToolDnd.endDrag();
   }
 
   private handleClick(event: MouseEvent) {
