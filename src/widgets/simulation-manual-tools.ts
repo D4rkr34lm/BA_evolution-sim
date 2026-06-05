@@ -31,10 +31,6 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
       flex-wrap: wrap;
     }
 
-    #label {
-      font-weight: 600;
-    }
-
     sl-button[draggable="true"] {
       cursor: grab;
     }
@@ -152,7 +148,6 @@ export class SimulationManualTools extends SignalWatcher(LitElementWw) {
   render() {
     return html`
       <div id="manual-tools-container">
-        <span id="label">Manual Tools:</span>
         ${this.renderSpriteToolButton({
           label: "Food Source",
           tool: "add-food-source",
