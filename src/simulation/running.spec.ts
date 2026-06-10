@@ -1,5 +1,11 @@
 import { assert, describe, expect, it } from "vitest";
-import { addFoodSource, runSimulation, Simulation } from "./running";
+import {
+  addAgent,
+  addFoodSource,
+  removeEntityAt,
+  runSimulation,
+  Simulation,
+} from "./running";
 import { spawnAgent } from "./agent/agent";
 import { AgentState } from "./agent/state";
 import { VEC_0 } from "./position";
@@ -129,5 +135,116 @@ describe("running simulation", () => {
     const updatedSimulation = addFoodSource(simulation, { x: 1, y: 2 });
 
     expect(updatedSimulation.foodSources).toHaveLength(1);
+  });
+
+  it("adds an agent at a valid position with a default genome", () => {
+    const position = { x: 1, y: 2 };
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, position);
+
+    expect(updatedSimulation.agents).toHaveLength(1);
+    expect(updatedSimulation.agents[0]?.state.position).toEqual(position);
+    expect(updatedSimulation.agents[0]?.genome).toEqual(initializeGenome());
+  });
+
+  it("does not add an agent outside negative bounds", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: -1, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent outside the world size", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: 10, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent at a non-integer position", () => {
+    const simulation = createTestSimulation({});
+
+    const updatedSimulation = addAgent(simulation, { x: 1.5, y: 0 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("does not add an agent at an occupied agent position", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({ agents: [agent] });
+
+    const updatedSimulation = addAgent(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.agents).toHaveLength(1);
+  });
+
+  it("removes a food source at a position", () => {
+    const foodSource = createTestFoodSource({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({ foodSources: [foodSource] });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.foodSources).toHaveLength(0);
+  });
+
+  it("removes an agent at a position", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({ agents: [agent] });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+  });
+
+  it("removes only one entity at a position", () => {
+    const firstAgent = createTestAgent({ position: { x: 1, y: 2 } });
+    const secondAgent = createTestAgent({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({
+      agents: [firstAgent, secondAgent],
+    });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.agents).toHaveLength(1);
+    expect(updatedSimulation.agents[0]?.id).toBe(secondAgent.id);
+  });
+
+  it("prefers removing an agent over a food source at the same position", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const foodSource = createTestFoodSource({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({
+      agents: [agent],
+      foodSources: [foodSource],
+    });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 1, y: 2 });
+
+    expect(updatedSimulation.agents).toHaveLength(0);
+    expect(updatedSimulation.foodSources).toHaveLength(1);
+  });
+
+  it("does not remove anything at an empty position", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const foodSource = createTestFoodSource({ position: { x: 3, y: 4 } });
+    const simulation = createTestSimulation({
+      agents: [agent],
+      foodSources: [foodSource],
+    });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 5, y: 6 });
+
+    expect(updatedSimulation).toBe(simulation);
+  });
+
+  it("does not remove anything outside the world bounds", () => {
+    const agent = createTestAgent({ position: { x: 1, y: 2 } });
+    const simulation = createTestSimulation({ agents: [agent] });
+
+    const updatedSimulation = removeEntityAt(simulation, { x: 10, y: 2 });
+
+    expect(updatedSimulation).toBe(simulation);
   });
 });

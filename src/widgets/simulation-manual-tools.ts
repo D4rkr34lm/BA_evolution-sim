@@ -1,7 +1,7 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, property } from "lit/decorators.js";
-import { html } from "@lit-labs/signals";
+import { SignalWatcher, html } from "@lit-labs/signals";
 import { SlButton, SlIcon } from "@shoelace-style/shoelace";
 import {
   ManualSimulationTool,
@@ -11,7 +11,7 @@ import { AgentSpriteData, FoodSourceSpriteData } from "./assets";
 import { SIMULATION_TILE_SIZE } from "@/simulation/rendering";
 
 @customElement("simulation-manual-tools")
-export class SimulationManualTools extends LitElementWw {
+export class SimulationManualTools extends SignalWatcher(LitElementWw) {
   simulationStore = useSimulationStore();
 
   @property({ attribute: "widget-id" })
@@ -29,10 +29,6 @@ export class SimulationManualTools extends LitElementWw {
       gap: 0.5rem;
       align-items: center;
       flex-wrap: wrap;
-    }
-
-    #label {
-      font-weight: 600;
     }
 
     sl-button[draggable="true"] {
@@ -57,32 +53,40 @@ export class SimulationManualTools extends LitElementWw {
       border-color: var(--sl-color-danger-500);
     }
 
-    .remove-tool[disabled]::part(base) {
-      color: var(--sl-color-danger-400);
-      border-color: var(--sl-color-danger-200);
+    .remove-tool[variant="default"]::part(base) {
+      color: var(--sl-color-danger-700);
+      border-color: var(--sl-color-danger-500);
     }
   `;
 
   private startDrag(
     event: DragEvent,
     tool: ManualSimulationTool,
-    dragImageSource?: string,
+    dragImage?: HTMLElement,
   ) {
+    this.simulationStore.setActiveManualTool(null);
     this.simulationStore.manualToolDnd.startDrag(tool, this.widgetId);
 
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = "copy";
 
-      if (dragImageSource) {
-        const dragImage = new Image(SIMULATION_TILE_SIZE, SIMULATION_TILE_SIZE);
-        dragImage.src = dragImageSource;
-        event.dataTransfer.setDragImage(dragImage, 8, 8);
+      if (dragImage) {
+        event.dataTransfer.setDragImage(
+          dragImage,
+          SIMULATION_TILE_SIZE / 2,
+          SIMULATION_TILE_SIZE / 2,
+        );
       }
     }
   }
 
   private endDrag() {
     this.simulationStore.manualToolDnd.endDrag();
+  }
+
+  private toggleRemoveMode() {
+    this.simulationStore.manualToolDnd.endDrag();
+    this.simulationStore.toggleActiveManualTool("remove-entity");
   }
 
   private renderSpriteToolButton({
@@ -101,8 +105,17 @@ export class SimulationManualTools extends LitElementWw {
         size="small"
         draggable=${disabled ? "false" : "true"}
         ?disabled=${disabled}
-        @dragstart=${(event: DragEvent) =>
-          this.startDrag(event, tool, spriteSource)}
+        @dragstart=${(event: DragEvent) => {
+          const dragImage = (event.currentTarget as HTMLElement).querySelector(
+            ".tool-sprite",
+          );
+
+          this.startDrag(
+            event,
+            tool,
+            dragImage instanceof HTMLElement ? dragImage : undefined,
+          );
+        }}
         @dragend=${() => this.endDrag()}
       >
         <span class="tool-content">
@@ -114,8 +127,16 @@ export class SimulationManualTools extends LitElementWw {
   }
 
   private renderRemoveToolButton() {
+    const isActive =
+      this.simulationStore.activeManualTool.get() === "remove-entity";
+
     return html`
-      <sl-button class="remove-tool" size="small" variant="danger" disabled>
+      <sl-button
+        class="remove-tool"
+        size="small"
+        variant=${isActive ? "danger" : "default"}
+        @click=${() => this.toggleRemoveMode()}
+      >
         <span class="tool-content">
           <sl-icon name="eraser"></sl-icon>
           <span>Remove</span>
@@ -127,7 +148,6 @@ export class SimulationManualTools extends LitElementWw {
   render() {
     return html`
       <div id="manual-tools-container">
-        <span id="label">Manual Tools:</span>
         ${this.renderSpriteToolButton({
           label: "Food Source",
           tool: "add-food-source",
@@ -137,7 +157,6 @@ export class SimulationManualTools extends LitElementWw {
           label: "Agent",
           tool: "add-agent",
           spriteSource: AgentSpriteData,
-          disabled: true,
         })}
         ${this.renderRemoveToolButton()}
       </div>

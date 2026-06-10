@@ -1,6 +1,7 @@
 import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, property, query } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
 import {
   AgentSnapshot,
@@ -13,7 +14,9 @@ import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
 import { scaleVector, Vec2 } from "@/simulation/position";
 import { SIMULATION_TILE_SIZE } from "@/simulation/rendering";
+import { SIMULATION_ENTITY_LAYERS } from "@/simulation/entityPresentation";
 import { useSimulationStore } from "@/composables/simulationStore";
+import { SignalWatcher } from "@lit-labs/signals";
 import { effect } from "signal-utils/subtle/microtask-effect";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
@@ -64,7 +67,7 @@ class AgentRenderer implements EntitySnapshotRenderer<AgentSnapshot> {
 
   constructor() {
     this.root = new Container({
-      zIndex: 2,
+      zIndex: SIMULATION_ENTITY_LAYERS.agent,
     });
     this.bodySprite = new Sprite({
       texture: Textures.agent,
@@ -88,7 +91,7 @@ class FoodSourceRenderer implements EntitySnapshotRenderer<FoodSourceSnapshot> {
 
   constructor() {
     this.root = new Container({
-      zIndex: 1,
+      zIndex: SIMULATION_ENTITY_LAYERS["food-source"],
     });
     this.bodySprite = new Sprite({
       texture: Textures.foodSource,
@@ -184,7 +187,7 @@ function useSimulationRenderer() {
 }
 
 @customElement("simulation-state-render")
-export class SimulationStateRender extends LitElementWw {
+export class SimulationStateRender extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
@@ -201,14 +204,23 @@ export class SimulationStateRender extends LitElementWw {
   renderer = useSimulationRenderer();
   unwatch: (() => void) | null = null;
 
-  private getTilePositionFromEvent(event: DragEvent): Vec2 | null {
+  private readonly handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      this.simulationStore.setActiveManualTool(null);
+    }
+  };
+
+  private getTilePositionFromClientPoint(
+    clientX: number,
+    clientY: number,
+  ): Vec2 | null {
     if (!hasValue(this.app)) {
       return null;
     }
 
     const bounds = this.canvasContainer.getBoundingClientRect();
-    const localX = event.clientX - bounds.left;
-    const localY = event.clientY - bounds.top;
+    const localX = clientX - bounds.left;
+    const localY = clientY - bounds.top;
     const scaleX = this.app.screen.width / bounds.width;
     const scaleY = this.app.screen.height / bounds.height;
 
@@ -216,6 +228,10 @@ export class SimulationStateRender extends LitElementWw {
       x: Math.floor((localX * scaleX) / SIMULATION_TILE_SIZE),
       y: Math.floor((localY * scaleY) / SIMULATION_TILE_SIZE),
     };
+  }
+
+  private getTilePositionFromEvent(event: DragEvent): Vec2 | null {
+    return this.getTilePositionFromClientPoint(event.clientX, event.clientY);
   }
 
   private getDraggedManualTool() {
@@ -249,10 +265,29 @@ export class SimulationStateRender extends LitElementWw {
     event.preventDefault();
 
     if (tool === "add-food-source") {
-      void this.simulationStore.addFoodSource(tilePosition);
+      this.simulationStore.addFoodSource(tilePosition);
+    } else if (tool === "add-agent") {
+      this.simulationStore.addAgent(tilePosition);
+    } else {
+      this.simulationStore.manualToolDnd.endDrag();
+    }
+  }
+
+  private handleClick(event: MouseEvent) {
+    const activeManualTool = this.simulationStore.activeManualTool.get();
+
+    if (activeManualTool !== "remove-entity") {
+      return;
     }
 
-    this.simulationStore.manualToolDnd.endDrag();
+    const tilePosition = this.getTilePositionFromClientPoint(
+      event.clientX,
+      event.clientY,
+    );
+
+    if (hasValue(tilePosition)) {
+      void this.simulationStore.removeEntityAt(tilePosition);
+    }
   }
 
   private async setupCanvas() {
@@ -279,17 +314,34 @@ export class SimulationStateRender extends LitElementWw {
       width: 100%;
       aspect-ratio: 16 / 9;
     }
+
+    #simulation-container.delete-mode {
+      cursor: crosshair;
+      outline: 2px solid var(--sl-color-danger-500);
+      outline-offset: 2px;
+    }
   `;
 
   /** Define your template here and return it. */
   render() {
+    const isDeleteMode =
+      this.simulationStore.activeManualTool.get() === "remove-entity";
+
     return html`
       <div
         id="simulation-container"
+        class=${classMap({ "delete-mode": isDeleteMode })}
         @dragover=${this.handleDragOver}
         @drop=${this.handleDrop}
+        @click=${this.handleClick}
       ></div>
     `;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    window.addEventListener("keydown", this.handleKeyDown);
   }
 
   async firstUpdated() {
@@ -309,5 +361,6 @@ export class SimulationStateRender extends LitElementWw {
 
     this.app?.destroy();
     this.unwatch?.();
+    window.removeEventListener("keydown", this.handleKeyDown);
   }
 }

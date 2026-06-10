@@ -43,6 +43,7 @@ const currentSnapshot = signal<SimulationSnapshot | null>(null);
 const simulationStatus = signal<SimulationStatus>("uninitialized");
 const simulationSpeed = signal(1);
 const manualToolDnd = createDndStore<ManualSimulationTool>();
+const activeManualTool = signal<ManualSimulationTool | null>(null);
 const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
 
@@ -93,6 +94,34 @@ async function addFoodSource(position: Vec2) {
   currentSnapshot.set(snapshot);
 }
 
+async function addAgent(position: Vec2) {
+  if (!hasValue(currentSnapshot.get())) {
+    return;
+  }
+
+  const snapshot = await SimulationWorker.addAgent(position);
+
+  currentSnapshot.set(snapshot);
+}
+
+async function removeEntityAt(position: Vec2) {
+  if (!hasValue(currentSnapshot.get())) {
+    return;
+  }
+
+  const snapshot = await SimulationWorker.removeEntityAt(position);
+
+  currentSnapshot.set(snapshot);
+}
+
+function setActiveManualTool(tool: ManualSimulationTool | null) {
+  activeManualTool.set(tool);
+}
+
+function toggleActiveManualTool(tool: ManualSimulationTool) {
+  activeManualTool.set(activeManualTool.get() === tool ? null : tool);
+}
+
 async function startSimulation() {
   if (!isRunning.get() && hasValue(currentSnapshot.get())) {
     simulationStatus.set("running");
@@ -132,6 +161,8 @@ export function useSimulationStore() {
   return {
     initializeNewSimulation,
     addFoodSource,
+    addAgent,
+    removeEntityAt,
     runNextTick,
     startSimulation,
     stopSimulation,
@@ -141,6 +172,9 @@ export function useSimulationStore() {
     simulationStatus,
     simulationSpeed,
     manualToolDnd,
+    activeManualTool,
+    setActiveManualTool,
+    toggleActiveManualTool,
     isRunning,
   };
 }
