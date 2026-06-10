@@ -13,6 +13,7 @@ import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "@/simulation/position";
 import { createDndStore } from "./useDnd";
 import { signalArray } from "signal-utils/array";
+import { EntitySelection, EntityType, extractAgentSelectionFromHistory, extractFoodSourceSelectionFromHistory } from "@/widgets/utils/entityInspection";
 
 export type ManualSimulationTool =
   | "add-food-source"
@@ -48,6 +49,16 @@ const manualToolDnd = createDndStore<ManualSimulationTool>();
 const activeManualTool = signal<ManualSimulationTool | null>(null);
 const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
+
+const currentSelection = signal<EntitySelection | null>(null);
+
+function selectEntity({entityId, entityType}: {entityId: string, entityType: EntityType}) {
+  const selection = entityType === "agent" ?
+    extractAgentSelectionFromHistory(entityId, simulationHistory) :
+    extractFoodSourceSelectionFromHistory(entityId, simulationHistory);
+
+  currentSelection.set(selection);
+}
 
 function updateCurrentSnapshot(snapshot: SimulationSnapshot) {
   currentSnapshot.set(snapshot);
@@ -173,6 +184,7 @@ export function useSimulationStore() {
     stopSimulation,
     resetSimulation,
     setSimulationSpeed,
+    selectEntity,
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,
