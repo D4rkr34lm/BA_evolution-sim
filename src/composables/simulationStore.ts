@@ -2,7 +2,7 @@ import { SimulationMetadata } from "@/simulation/running";
 import { SimulationSnapshot } from "@/simulation/serialization";
 import { computed, signal } from "@lit-labs/signals";
 import * as Comlink from "comlink";
-import { cloneDeep } from "lodash-es";
+import { cloneDeep, first, isEqual } from "lodash-es";
 
 import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
 import {
@@ -51,6 +51,26 @@ const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
 
 const currentSelection = signal<EntitySelection | null>(null);
+
+function selectEntityAt(position: Vec2) {
+  const snapshot = currentSnapshot.get();
+
+  if (!hasValue(snapshot)) {
+    return;
+  }
+
+  const entitiesAtPosition = [
+    ...snapshot.agents.filter((agent) => isEqual(agent.state.position, position)),
+    ...snapshot.foodSources.filter((foodSource) => isEqual(foodSource.position, position))
+  ];
+
+  const topEntityAtPosition = first(entitiesAtPosition);
+
+  if(hasValue(topEntityAtPosition)) {
+    const entityType: EntityType = snapshot.agents.some(agent => agent.id === topEntityAtPosition.id) ? "agent" : "foodSource";
+    selectEntity({entityId: topEntityAtPosition.id, entityType});
+  }
+}
 
 function selectEntity({entityId, entityType}: {entityId: string, entityType: EntityType}) {
   const selection = entityType === "agent" ?
@@ -185,6 +205,7 @@ export function useSimulationStore() {
     resetSimulation,
     setSimulationSpeed,
     selectEntity,
+    selectEntityAt,
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,

@@ -9,7 +9,7 @@ import {
   FoodSourceSnapshot,
   SimulationSnapshot,
 } from "@/simulation/serialization";
-import { hasValue } from "@/utils/typeGuards";
+import { hasNoValue, hasValue } from "@/utils/typeGuards";
 import { Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
 import { scaleVector, Vec2 } from "@/simulation/position";
@@ -118,7 +118,7 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
   constructor(
     private readonly rootContainer: Container,
     private readonly createRenderer: () => EntitySnapshotRenderer<TSnapshot>,
-  ) {}
+  ) { }
 
   update(snapshots: TSnapshot[]) {
     const oldIds = Array.from(this.rendererCache.keys());
@@ -274,19 +274,20 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
   }
 
   private handleClick(event: MouseEvent) {
-    const activeManualTool = this.simulationStore.activeManualTool.get();
-
-    if (activeManualTool !== "remove-entity") {
-      return;
-    }
-
     const tilePosition = this.getTilePositionFromClientPoint(
       event.clientX,
       event.clientY,
     );
+    if (hasNoValue(tilePosition)) return;
 
-    if (hasValue(tilePosition)) {
-      void this.simulationStore.removeEntityAt(tilePosition);
+
+    const activeManualTool = this.simulationStore.activeManualTool.get();
+
+    if (activeManualTool === "remove-entity") {
+      this.simulationStore.removeEntityAt(tilePosition);   
+    }
+    else {
+      this.simulationStore.selectEntityAt(tilePosition);
     }
   }
 
