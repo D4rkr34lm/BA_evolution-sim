@@ -12,6 +12,7 @@ import {
 import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "@/simulation/position";
 import { createDndStore } from "./useDnd";
+import { signalArray } from "signal-utils/array";
 
 export type ManualSimulationTool =
   | "add-food-source"
@@ -40,12 +41,18 @@ const SimulationWorker = Comlink.wrap<SimulationRunner>(
 
 const simulationMetadata = signal<SimulationMetadata | null>(null);
 const currentSnapshot = signal<SimulationSnapshot | null>(null);
+const simulationHistory = signalArray<SimulationSnapshot>([]);
 const simulationStatus = signal<SimulationStatus>("uninitialized");
 const simulationSpeed = signal(1);
 const manualToolDnd = createDndStore<ManualSimulationTool>();
 const activeManualTool = signal<ManualSimulationTool | null>(null);
 const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
+
+function updateCurrentSnapshot(snapshot: SimulationSnapshot) {
+  currentSnapshot.set(snapshot);
+  simulationHistory.push(snapshot);
+}
 
 const currentActiveSimulationData = computed(() => {
   const metadata = simulationMetadata.get();
@@ -69,7 +76,7 @@ async function initializeNewSimulation(options: SimulationInitOptions) {
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
   simulationMetadata.set(initResult.metadata);
-  currentSnapshot.set(initResult.initialSnapshot);
+  updateCurrentSnapshot(initResult.initialSnapshot);
   simulationStatus.set("ready");
 }
 
@@ -90,8 +97,7 @@ async function addFoodSource(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.addFoodSource(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot); 
 }
 
 async function addAgent(position: Vec2) {
@@ -100,8 +106,7 @@ async function addAgent(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.addAgent(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot);
 }
 
 async function removeEntityAt(position: Vec2) {
@@ -110,8 +115,7 @@ async function removeEntityAt(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.removeEntityAt(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot);
 }
 
 function setActiveManualTool(tool: ManualSimulationTool | null) {
@@ -127,7 +131,7 @@ async function startSimulation() {
     simulationStatus.set("running");
     await SimulationWorker.startSimulation(
       Comlink.proxy((snapshot) => {
-        currentSnapshot.set(snapshot);
+        updateCurrentSnapshot(snapshot);
       }),
     );
   }
@@ -145,6 +149,7 @@ async function resetSimulation() {
     const { initialSnapshot, metadata } =
       await SimulationWorker.resetSimulation();
     simulationMetadata.set(metadata);
+    simulationHistory.splice(0, simulationHistory.length);
     currentSnapshot.set(initialSnapshot);
     simulationStatus.set("ready");
   } catch (error) {
