@@ -68,6 +68,8 @@ function selectEntityAt(position: Vec2) {
 
   if(hasValue(topEntityAtPosition)) {
     const entityType: EntityType = snapshot.agents.some(agent => agent.id === topEntityAtPosition.id) ? "agent" : "foodSource";
+    console.log(`INFO - selecting entity at position, ${JSON.stringify(position)}, selected entity:`, topEntityAtPosition);
+
     selectEntity({entityId: topEntityAtPosition.id, entityType});
   }
 }

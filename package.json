@@ -7,6 +7,7 @@
     "license": "MIT",
     "author": "Manuel Frohn (D4rkr34lm)",
     "scripts": {
+        "clean": "rm -rf dist && rm -rf node_modules",
         "prepublishOnly": "@webwriter/build",
         "localize": "lit-localize extract && @webwriter/build localize && lit-localize build",
         "dev": "npx @webwriter/build dev",
