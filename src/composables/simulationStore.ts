@@ -2,7 +2,7 @@ import { SimulationMetadata } from "@/simulation/running";
 import { SimulationSnapshot } from "@/simulation/serialization";
 import { computed, signal } from "@lit-labs/signals";
 import * as Comlink from "comlink";
-import { cloneDeep, first, isEqual } from "lodash-es";
+import { first, isEqual } from "lodash-es";
 
 import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
 import {
@@ -13,7 +13,12 @@ import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "@/simulation/position";
 import { createDndStore } from "./useDnd";
 import { signalArray } from "signal-utils/array";
-import { EntitySelection, EntityType, extractAgentSelectionFromHistory, extractFoodSourceSelectionFromHistory } from "@/widgets/utils/entityInspection";
+import {
+  EntitySelection,
+  EntityType,
+  extractAgentSelectionFromHistory,
+  extractFoodSourceSelectionFromHistory,
+} from "@/widgets/utils/entityInspection";
 
 export type ManualSimulationTool =
   | "add-food-source"
@@ -60,31 +65,63 @@ function selectEntityAt(position: Vec2) {
   }
 
   const entitiesAtPosition = [
-    ...snapshot.agents.filter((agent) => isEqual(agent.state.position, position)),
-    ...snapshot.foodSources.filter((foodSource) => isEqual(foodSource.position, position))
+    ...snapshot.agents.filter((agent) =>
+      isEqual(agent.state.position, position),
+    ),
+    ...snapshot.foodSources.filter((foodSource) =>
+      isEqual(foodSource.position, position),
+    ),
   ];
 
   const topEntityAtPosition = first(entitiesAtPosition);
 
-  if(hasValue(topEntityAtPosition)) {
-    const entityType: EntityType = snapshot.agents.some(agent => agent.id === topEntityAtPosition.id) ? "agent" : "foodSource";
-    console.log(`INFO - selecting entity at position, ${JSON.stringify(position)}, selected entity:`, topEntityAtPosition);
+  if (hasValue(topEntityAtPosition)) {
+    const entityType: EntityType = snapshot.agents.some(
+      (agent) => agent.id === topEntityAtPosition.id,
+    )
+      ? "agent"
+      : "foodSource";
+    console.log(
+      `INFO - selecting entity at position, ${JSON.stringify(position)}, selected entity:`,
+      topEntityAtPosition,
+    );
 
-    selectEntity({entityId: topEntityAtPosition.id, entityType});
+    selectEntity({ entityId: topEntityAtPosition.id, entityType });
   }
 }
 
-function selectEntity({entityId, entityType}: {entityId: string, entityType: EntityType}) {
-  const selection = entityType === "agent" ?
-    extractAgentSelectionFromHistory(entityId, simulationHistory) :
-    extractFoodSourceSelectionFromHistory(entityId, simulationHistory);
+function selectEntity({
+  entityId,
+  entityType,
+}: {
+  entityId: string;
+  entityType: EntityType;
+}) {
+  const selection =
+    entityType === "agent"
+      ? extractAgentSelectionFromHistory(entityId, simulationHistory)
+      : extractFoodSourceSelectionFromHistory(entityId, simulationHistory);
 
   currentSelection.set(selection);
+}
+
+function refreshCurrentSelection() {
+  const selection = currentSelection.get();
+
+  if (!hasValue(selection)) {
+    return;
+  }
+
+  selectEntity({
+    entityId: selection.entityId,
+    entityType: selection.type,
+  });
 }
 
 function updateCurrentSnapshot(snapshot: SimulationSnapshot) {
   currentSnapshot.set(snapshot);
   simulationHistory.push(snapshot);
+  refreshCurrentSelection();
 }
 
 const currentActiveSimulationData = computed(() => {
@@ -109,6 +146,8 @@ async function initializeNewSimulation(options: SimulationInitOptions) {
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
   simulationMetadata.set(initResult.metadata);
+  simulationHistory.splice(0, simulationHistory.length);
+  currentSelection.set(null);
   updateCurrentSnapshot(initResult.initialSnapshot);
   simulationStatus.set("ready");
 }
@@ -120,7 +159,7 @@ async function runNextTick() {
 
   const tickResult = await SimulationWorker.runTick();
 
-  currentSnapshot.set(tickResult);
+  updateCurrentSnapshot(tickResult);
   simulationStatus.set("paused");
 }
 
@@ -130,7 +169,7 @@ async function addFoodSource(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.addFoodSource(position);
-  updateCurrentSnapshot(snapshot); 
+  updateCurrentSnapshot(snapshot);
 }
 
 async function addAgent(position: Vec2) {
@@ -183,7 +222,8 @@ async function resetSimulation() {
       await SimulationWorker.resetSimulation();
     simulationMetadata.set(metadata);
     simulationHistory.splice(0, simulationHistory.length);
-    currentSnapshot.set(initialSnapshot);
+    currentSelection.set(null);
+    updateCurrentSnapshot(initialSnapshot);
     simulationStatus.set("ready");
   } catch (error) {
     console.error("ERROR - Failed to reset simulation", error);
@@ -208,6 +248,7 @@ export function useSimulationStore() {
     setSimulationSpeed,
     selectEntity,
     selectEntityAt,
+    currentSelection,
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,

@@ -118,7 +118,7 @@ class EntitySnapshotRendererCache<TSnapshot extends EntitySnapshot> {
   constructor(
     private readonly rootContainer: Container,
     private readonly createRenderer: () => EntitySnapshotRenderer<TSnapshot>,
-  ) { }
+  ) {}
 
   update(snapshots: TSnapshot[]) {
     const oldIds = Array.from(this.rendererCache.keys());
@@ -280,13 +280,11 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
     );
     if (hasNoValue(tilePosition)) return;
 
-
     const activeManualTool = this.simulationStore.activeManualTool.get();
 
     if (activeManualTool === "remove-entity") {
-      this.simulationStore.removeEntityAt(tilePosition);   
-    }
-    else {
+      this.simulationStore.removeEntityAt(tilePosition);
+    } else {
       this.simulationStore.selectEntityAt(tilePosition);
     }
   }
