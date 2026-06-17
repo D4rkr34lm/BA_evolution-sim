@@ -2,7 +2,7 @@ import { SimulationMetadata } from "@/simulation/running";
 import { SimulationSnapshot } from "@/simulation/serialization";
 import { computed, signal } from "@lit-labs/signals";
 import * as Comlink from "comlink";
-import { cloneDeep } from "lodash-es";
+import { first, isEqual } from "lodash-es";
 
 import SimulationWorkerRaw from "worker:../simulation/Simulation.worker";
 import {
@@ -12,6 +12,13 @@ import {
 import { hasValue } from "@/utils/typeGuards";
 import { Vec2 } from "@/simulation/position";
 import { createDndStore } from "./useDnd";
+import { signalArray } from "signal-utils/array";
+import {
+  EntitySelection,
+  EntityType,
+  extractAgentSelectionFromHistory,
+  extractFoodSourceSelectionFromHistory,
+} from "@/widgets/utils/entityInspection";
 
 export type ManualSimulationTool =
   | "add-food-source"
@@ -40,12 +47,82 @@ const SimulationWorker = Comlink.wrap<SimulationRunner>(
 
 const simulationMetadata = signal<SimulationMetadata | null>(null);
 const currentSnapshot = signal<SimulationSnapshot | null>(null);
+const simulationHistory = signalArray<SimulationSnapshot>([]);
 const simulationStatus = signal<SimulationStatus>("uninitialized");
 const simulationSpeed = signal(1);
 const manualToolDnd = createDndStore<ManualSimulationTool>();
 const activeManualTool = signal<ManualSimulationTool | null>(null);
 const isRunning = computed(() => simulationStatus.get() === "running");
 const DEFAULT_TICK_INTERVAL = 100;
+
+const currentSelection = signal<EntitySelection | null>(null);
+
+function selectEntityAt(position: Vec2) {
+  const snapshot = currentSnapshot.get();
+
+  if (!hasValue(snapshot)) {
+    return;
+  }
+
+  const entitiesAtPosition = [
+    ...snapshot.agents.filter((agent) =>
+      isEqual(agent.state.position, position),
+    ),
+    ...snapshot.foodSources.filter((foodSource) =>
+      isEqual(foodSource.position, position),
+    ),
+  ];
+
+  const topEntityAtPosition = first(entitiesAtPosition);
+
+  if (hasValue(topEntityAtPosition)) {
+    const entityType: EntityType = snapshot.agents.some(
+      (agent) => agent.id === topEntityAtPosition.id,
+    )
+      ? "agent"
+      : "foodSource";
+    console.log(
+      `INFO - selecting entity at position, ${JSON.stringify(position)}, selected entity:`,
+      topEntityAtPosition,
+    );
+
+    selectEntity({ entityId: topEntityAtPosition.id, entityType });
+  }
+}
+
+function selectEntity({
+  entityId,
+  entityType,
+}: {
+  entityId: string;
+  entityType: EntityType;
+}) {
+  const selection =
+    entityType === "agent"
+      ? extractAgentSelectionFromHistory(entityId, simulationHistory)
+      : extractFoodSourceSelectionFromHistory(entityId, simulationHistory);
+
+  currentSelection.set(selection);
+}
+
+function refreshCurrentSelection() {
+  const selection = currentSelection.get();
+
+  if (!hasValue(selection)) {
+    return;
+  }
+
+  selectEntity({
+    entityId: selection.entityId,
+    entityType: selection.type,
+  });
+}
+
+function updateCurrentSnapshot(snapshot: SimulationSnapshot) {
+  currentSnapshot.set(snapshot);
+  simulationHistory.push(snapshot);
+  refreshCurrentSelection();
+}
 
 const currentActiveSimulationData = computed(() => {
   const metadata = simulationMetadata.get();
@@ -69,7 +146,9 @@ async function initializeNewSimulation(options: SimulationInitOptions) {
   const initResult = await SimulationWorker.initializeNewSimulation(options);
 
   simulationMetadata.set(initResult.metadata);
-  currentSnapshot.set(initResult.initialSnapshot);
+  simulationHistory.splice(0, simulationHistory.length);
+  currentSelection.set(null);
+  updateCurrentSnapshot(initResult.initialSnapshot);
   simulationStatus.set("ready");
 }
 
@@ -80,7 +159,7 @@ async function runNextTick() {
 
   const tickResult = await SimulationWorker.runTick();
 
-  currentSnapshot.set(tickResult);
+  updateCurrentSnapshot(tickResult);
   simulationStatus.set("paused");
 }
 
@@ -90,8 +169,7 @@ async function addFoodSource(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.addFoodSource(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot);
 }
 
 async function addAgent(position: Vec2) {
@@ -100,8 +178,7 @@ async function addAgent(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.addAgent(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot);
 }
 
 async function removeEntityAt(position: Vec2) {
@@ -110,8 +187,7 @@ async function removeEntityAt(position: Vec2) {
   }
 
   const snapshot = await SimulationWorker.removeEntityAt(position);
-
-  currentSnapshot.set(snapshot);
+  updateCurrentSnapshot(snapshot);
 }
 
 function setActiveManualTool(tool: ManualSimulationTool | null) {
@@ -127,7 +203,7 @@ async function startSimulation() {
     simulationStatus.set("running");
     await SimulationWorker.startSimulation(
       Comlink.proxy((snapshot) => {
-        currentSnapshot.set(snapshot);
+        updateCurrentSnapshot(snapshot);
       }),
     );
   }
@@ -145,7 +221,9 @@ async function resetSimulation() {
     const { initialSnapshot, metadata } =
       await SimulationWorker.resetSimulation();
     simulationMetadata.set(metadata);
-    currentSnapshot.set(initialSnapshot);
+    simulationHistory.splice(0, simulationHistory.length);
+    currentSelection.set(null);
+    updateCurrentSnapshot(initialSnapshot);
     simulationStatus.set("ready");
   } catch (error) {
     console.error("ERROR - Failed to reset simulation", error);
@@ -168,6 +246,9 @@ export function useSimulationStore() {
     stopSimulation,
     resetSimulation,
     setSimulationSpeed,
+    selectEntity,
+    selectEntityAt,
+    currentSelection,
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,

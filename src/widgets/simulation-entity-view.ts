@@ -1,0 +1,45 @@
+import { css } from "lit";
+import { LitElementWw } from "@webwriter/lit";
+import { customElement } from "lit/decorators.js";
+import { SignalWatcher, html } from "@lit-labs/signals";
+import { useSimulationStore } from "@/composables/simulationStore";
+import { SimulationEntityExplorer } from "./simulation-entity-explorer";
+
+@customElement("simulation-entity-view")
+export class SimulationEntityView extends SignalWatcher(LitElementWw) {
+  simulationStore = useSimulationStore();
+
+  static readonly scopedElements = {
+    "simulation-entity-explorer": SimulationEntityExplorer,
+  };
+
+  static readonly styles = css`
+    #entity-inspector-container {
+      border: 1px solid var(--sl-color-neutral-200);
+      border-radius: var(--sl-border-radius-medium);
+      background: var(--sl-color-neutral-0);
+      min-height: 18rem;
+      overflow: hidden;
+    }
+
+    .empty-state {
+      color: var(--sl-color-neutral-600);
+      margin: 0;
+      padding: 1rem;
+    }
+  `;
+
+  render() {
+    const selectedEntity = this.simulationStore.currentSelection.get();
+
+    return html`
+      <div id="entity-inspector-container">
+        ${selectedEntity
+          ? html`<simulation-entity-explorer
+              .selection=${selectedEntity}
+            ></simulation-entity-explorer>`
+          : html`<p class="empty-state">No entity selected.</p>`}
+      </div>
+    `;
+  }
+}
