@@ -3,13 +3,9 @@ import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
 import { computed, html, signal, SignalWatcher } from "@lit-labs/signals";
 import { ChartData, ChartOptions } from "chart.js";
-import { SlOption, SlSelect } from "@shoelace-style/shoelace";
+import { SlDetails, SlOption, SlSelect } from "@shoelace-style/shoelace";
 import { useSimulationStore } from "@/composables/simulationStore";
-import {
-  definedGenes,
-  GeneName,
-  getDefinedGene,
-} from "@/simulation/genetics/definitions";
+import { definedGenes, GeneName } from "@/simulation/genetics/definitions";
 import { ChartWrapper } from "./chart-wrapper";
 import {
   createAlleleShareOverTimeSeries,
@@ -18,7 +14,6 @@ import {
   createPopulationSeries,
   DEFAULT_HISTORY_SUBSET_PRESET,
   getAlleleColor,
-  getAllelesForGene,
   getHistorySubset,
   HISTORY_SUBSET_OPTIONS,
   HistorySubsetPreset,
@@ -129,7 +124,6 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     DEFAULT_HISTORY_SUBSET_PRESET,
   );
   private readonly selectedHistoryGene = signal<GeneName>(DEFAULT_GENE_NAME);
-  private readonly selectedHistoryAllele = signal("all");
   private readonly selectedCurrentGene = signal<GeneName>(DEFAULT_GENE_NAME);
 
   private readonly historySubset = computed(() =>
@@ -167,30 +161,10 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     ],
   }));
 
-  private readonly historyAlleles = computed(() =>
-    getAllelesForGene(this.historySubset.get(), this.selectedHistoryGene.get()),
-  );
-
-  private readonly selectedHistoryAlleles = computed(() => {
-    const availableAlleles = this.historyAlleles.get();
-    const selectedAllele = this.selectedHistoryAllele.get();
-
-    if (selectedAllele === "all") {
-      return availableAlleles;
-    }
-
-    const numericAllele = Number(selectedAllele);
-
-    return availableAlleles.includes(numericAllele)
-      ? [numericAllele]
-      : availableAlleles;
-  });
-
   private readonly alleleHistoryChartData = computed<ChartData>(() => ({
     datasets: createAlleleShareOverTimeSeries({
       snapshots: this.historySubset.get(),
       geneName: this.selectedHistoryGene.get(),
-      alleles: this.selectedHistoryAlleles.get(),
     }).map((series, index) => ({
       label: series.label,
       data: series.data,
@@ -226,6 +200,7 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
 
   static readonly scopedElements = {
     "chart-wrapper": ChartWrapper,
+    "sl-details": SlDetails,
     "sl-select": SlSelect,
     "sl-option": SlOption,
   };
@@ -233,41 +208,26 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
   static readonly styles = css`
     #analysis-container {
       display: grid;
-      gap: 1rem;
       width: 100%;
     }
 
-    .analysis-header,
-    .chart-card,
+    .statistics-controls,
+    .graph-panel,
     .controls-row {
       box-sizing: border-box;
     }
 
-    .analysis-header {
+    .statistics-controls {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 1rem;
       align-items: end;
-      border: 1px solid var(--sl-color-neutral-200);
-      border-radius: var(--sl-border-radius-medium);
-      background: var(--sl-color-neutral-0);
-      padding: 1rem;
+      padding: 0 1rem 1rem;
     }
 
     .analysis-title {
       margin: 0;
       font-size: 1.15rem;
-    }
-
-    .analysis-description {
-      color: var(--sl-color-neutral-700);
-      margin: 0.35rem 0 0;
-      max-width: 52rem;
-      line-height: 1.4;
-    }
-
-    .history-control {
-      min-width: 13rem;
     }
 
     .warning {
@@ -279,33 +239,21 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
 
     .chart-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+      padding: 0 1rem 1rem;
     }
 
-    .chart-card {
+    .graph-panel {
       display: grid;
-      gap: 1rem;
-      border: 1px solid var(--sl-color-neutral-200);
-      border-radius: var(--sl-border-radius-medium);
-      background: var(--sl-color-neutral-0);
-      padding: 1rem;
+      gap: 0.75rem;
       min-width: 0;
-    }
-
-    .wide-card {
-      grid-column: 1 / -1;
+      --chart-height: 14rem;
     }
 
     .chart-title {
       margin: 0;
       font-size: 1rem;
-    }
-
-    .chart-description {
-      color: var(--sl-color-neutral-700);
-      margin: -0.5rem 0 0;
-      line-height: 1.4;
     }
 
     .controls-row {
@@ -314,19 +262,12 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
       gap: 0.75rem;
     }
 
-    .controls-row sl-select {
-      min-width: 12rem;
-    }
-
-    @media (max-width: 700px) {
-      .analysis-header {
-        display: grid;
-        align-items: stretch;
-      }
-
-      .warning {
-        text-align: left;
-      }
+    #header {
+      display: inline-flex;
+      gap: 1rem;
+      padding: 1rem;
+      align-items: center;
+      justify-content: space-between;
     }
   `;
 
@@ -342,11 +283,6 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
 
   private handleHistoryGeneChange(event: Event) {
     this.selectedHistoryGene.set(this.getSelectValue(event) as GeneName);
-    this.selectedHistoryAllele.set("all");
-  }
-
-  private handleHistoryAlleleChange(event: Event) {
-    this.selectedHistoryAllele.set(this.getSelectValue(event));
   }
 
   private handleCurrentGeneChange(event: Event) {
@@ -364,30 +300,16 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     const selectedHistorySubsetOption = HISTORY_SUBSET_OPTIONS.find(
       (option) => option.value === selectedHistorySubsetPreset,
     );
-    const selectedHistoryGene = getDefinedGene(this.selectedHistoryGene.get());
-    const selectedCurrentGene = getDefinedGene(this.selectedCurrentGene.get());
-    const historyAlleles = this.historyAlleles.get();
-    const selectedHistoryAllele = this.selectedHistoryAllele.get();
-    const selectedHistoryAlleleValue = historyAlleles.includes(
-      Number(selectedHistoryAllele),
-    )
-      ? selectedHistoryAllele
-      : "all";
 
     return html`
       <section id="analysis-container" aria-labelledby="analysis-heading">
-        <div class="analysis-header">
-          <div>
-            <h2 id="analysis-heading" class="analysis-title">
-              Population analysis
-            </h2>
-            <p class="analysis-description">
-              These graphs connect individual genomes to population-level change
-              by showing population size and allele frequencies over time.
-            </p>
+        <sl-details open>
+          <div slot="summary">
+            <h2>Statistics</h2>
           </div>
-          <div>
-            <sl-select
+
+          <div id="header">
+    <sl-select
               class="history-control"
               label="History window"
               .value=${selectedHistorySubsetPreset}
@@ -404,99 +326,67 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
                   Full history may lag during long simulations.
                 </p>`
               : null}
+  </div>
+          <div class="chart-grid">
+            <article class="graph-panel">
+              <h3 class="chart-title">Population development</h3>
+              <chart-wrapper
+                type="line"
+                label="Population development"
+                .data=${this.populationChartData.get()}
+                .chartOptions=${populationChartOptions}
+              ></chart-wrapper>
+            </article>
+
+            <article class="graph-panel">
+              <h3 class="chart-title">Food availability</h3>
+              <chart-wrapper
+                type="line"
+                label="Food availability"
+                .data=${this.foodAvailabilityChartData.get()}
+                .chartOptions=${foodAvailabilityChartOptions}
+              ></chart-wrapper>
+            </article>
+
+            <article class="graph-panel">
+              <h3 class="chart-title">Gene distribution over time</h3>
+              <div class="controls-row">
+                <sl-select
+                  label="Gene"
+                  .value=${this.selectedHistoryGene.get()}
+                  @sl-change=${this.handleHistoryGeneChange}
+                >
+                  ${this.renderGeneOptions()}
+                </sl-select>
+              </div>
+              <chart-wrapper
+                type="line"
+                label="Gene distribution over time"
+                .data=${this.alleleHistoryChartData.get()}
+                .chartOptions=${alleleShareLineOptions}
+              ></chart-wrapper>
+            </article>
+
+            <article class="graph-panel">
+              <h3 class="chart-title">Current gene distribution</h3>
+              <div class="controls-row">
+                <sl-select
+                  label="Gene"
+                  .value=${this.selectedCurrentGene.get()}
+                  @sl-change=${this.handleCurrentGeneChange}
+                >
+                  ${this.renderGeneOptions()}
+                </sl-select>
+              </div>
+              <chart-wrapper
+                type="bar"
+                label="Current gene distribution"
+                .data=${this.currentDistributionChartData.get()}
+                .chartOptions=${currentDistributionOptions}
+              ></chart-wrapper>
+            </article>
           </div>
-        </div>
-
-        <div class="chart-grid">
-          <article class="chart-card wide-card">
-            <h3 class="chart-title">Population development</h3>
-            <p class="chart-description">
-              Tracks the number of living agents across the selected history
-              window.
-            </p>
-            <chart-wrapper
-              type="line"
-              label="Population development"
-              .data=${this.populationChartData.get()}
-              .chartOptions=${populationChartOptions}
-            ></chart-wrapper>
-          </article>
-
-          <article class="chart-card wide-card">
-            <h3 class="chart-title">Food availability</h3>
-            <p class="chart-description">
-              Shows the share of food sources currently available in the
-              environment, making resource pressure visible alongside population
-              changes.
-            </p>
-            <chart-wrapper
-              type="line"
-              label="Food availability"
-              .data=${this.foodAvailabilityChartData.get()}
-              .chartOptions=${foodAvailabilityChartOptions}
-            ></chart-wrapper>
-          </article>
-
-          <article class="chart-card wide-card">
-            <h3 class="chart-title">Gene distribution over time</h3>
-            <p class="chart-description">
-              Shows how allele shares for ${selectedHistoryGene.label} change
-              over the selected history window.
-            </p>
-            <div class="controls-row">
-              <sl-select
-                label="Gene"
-                .value=${this.selectedHistoryGene.get()}
-                @sl-change=${this.handleHistoryGeneChange}
-              >
-                ${this.renderGeneOptions()}
-              </sl-select>
-              <sl-select
-                label="Allele"
-                .value=${selectedHistoryAlleleValue}
-                ?disabled=${historyAlleles.length === 0}
-                @sl-change=${this.handleHistoryAlleleChange}
-              >
-                <sl-option value="all">All alleles</sl-option>
-                ${historyAlleles.map(
-                  (allele) => html`
-                    <sl-option value=${String(allele)}
-                      >Allele: ${allele}</sl-option
-                    >
-                  `,
-                )}
-              </sl-select>
-            </div>
-            <chart-wrapper
-              type="line"
-              label="Gene distribution over time"
-              .data=${this.alleleHistoryChartData.get()}
-              .chartOptions=${alleleShareLineOptions}
-            ></chart-wrapper>
-          </article>
-
-          <article class="chart-card wide-card">
-            <h3 class="chart-title">Current gene distribution</h3>
-            <p class="chart-description">
-              Shows the current allele shares for ${selectedCurrentGene.label}.
-            </p>
-            <div class="controls-row">
-              <sl-select
-                label="Gene"
-                .value=${this.selectedCurrentGene.get()}
-                @sl-change=${this.handleCurrentGeneChange}
-              >
-                ${this.renderGeneOptions()}
-              </sl-select>
-            </div>
-            <chart-wrapper
-              type="bar"
-              label="Current gene distribution"
-              .data=${this.currentDistributionChartData.get()}
-              .chartOptions=${currentDistributionOptions}
-            ></chart-wrapper>
-          </article>
-        </div>
+        </sl-details>
       </section>
     `;
   }

@@ -36,11 +36,11 @@ export class ChartWrapper extends LitElementWw {
   static readonly styles = css`
     :host {
       display: block;
-      min-height: 18rem;
+      min-height: var(--chart-height, 15rem);
     }
 
     .canvas-frame {
-      height: 18rem;
+      height: var(--chart-height, 15rem);
       position: relative;
       width: 100%;
     }
