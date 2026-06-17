@@ -461,7 +461,7 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
                 ${historyAlleles.map(
                   (allele) => html`
                     <sl-option value=${String(allele)}
-                      >Allele ${allele}</sl-option
+                      >Allele: ${allele}</sl-option
                     >
                   `,
                 )}

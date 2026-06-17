@@ -35,6 +35,11 @@ export const HISTORY_SUBSET_OPTIONS: HistorySubsetOption[] = [
 ];
 
 export const DEFAULT_HISTORY_SUBSET_PRESET: HistorySubsetPreset = "last-100";
+const HISTORY_AXIS_STEP = 20;
+
+function roundUpToMultiple(value: number, multiple: number) {
+  return Math.ceil(value / multiple) * multiple;
+}
 
 export function getHistorySubset(
   history: readonly SimulationSnapshot[],
@@ -48,7 +53,32 @@ export function getHistorySubset(
     return Array.from(history);
   }
 
-  return history.slice(-option.limit);
+  const snapshots = Array.from(history);
+  const firstSnapshot = snapshots[0];
+  const latestSnapshot = snapshots[snapshots.length - 1];
+
+  if (!firstSnapshot || !latestSnapshot) {
+    return [];
+  }
+
+  const firstTick = firstSnapshot.tick;
+  const latestTick = latestSnapshot.tick;
+  const rawStartTick = latestTick - option.limit + 1;
+
+  if (rawStartTick <= firstTick) {
+    return snapshots;
+  }
+
+  const alignedStartTick = roundUpToMultiple(rawStartTick, HISTORY_AXIS_STEP);
+  const alignedSubset = snapshots.filter(
+    (snapshot) => snapshot.tick >= alignedStartTick,
+  );
+
+  if (alignedSubset.length > 0) {
+    return alignedSubset;
+  }
+
+  return snapshots.filter((snapshot) => snapshot.tick >= rawStartTick);
 }
 
 export function createPopulationSeries(
@@ -135,7 +165,7 @@ export function createAlleleShareOverTimeSeries({
 }): AlleleShareSeries[] {
   return alleles.map((allele) => ({
     allele,
-    label: `Allele ${allele}`,
+    label: `Allele: ${allele}`,
     data: snapshots.map((snapshot) => ({
       x: snapshot.tick,
       y: getAlleleShareForSnapshot(snapshot, geneName, allele),
