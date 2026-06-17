@@ -60,6 +60,22 @@ export function createPopulationSeries(
   }));
 }
 
+export function createFoodAvailabilitySeries(
+  snapshots: readonly SimulationSnapshot[],
+): ChartPoint[] {
+  return snapshots.map((snapshot) => {
+    const totalFoodSources = snapshot.foodSources.length;
+    const availableFoodSources = snapshot.foodSources.filter(
+      (foodSource) => foodSource.ticksTillRecovery === 0,
+    ).length;
+
+    return {
+      x: snapshot.tick,
+      y: totalFoodSources > 0 ? availableFoodSources / totalFoodSources : 0,
+    };
+  });
+}
+
 function getGeneAllele(
   agent: AgentSnapshot,
   geneName: GeneName,

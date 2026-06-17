@@ -14,6 +14,7 @@ import { ChartWrapper } from "./chart-wrapper";
 import {
   createAlleleShareOverTimeSeries,
   createCurrentAlleleDistribution,
+  createFoodAvailabilitySeries,
   createPopulationSeries,
   DEFAULT_HISTORY_SUBSET_PRESET,
   getAlleleColor,
@@ -41,6 +42,31 @@ const populationChartOptions: ChartOptions = {
       title: {
         display: true,
         text: "Agents",
+      },
+    },
+  },
+};
+
+const foodAvailabilityChartOptions: ChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      type: "linear",
+      title: {
+        display: true,
+        text: "Tick",
+      },
+    },
+    y: {
+      min: 0,
+      max: 1,
+      title: {
+        display: true,
+        text: "Available food",
+      },
+      ticks: {
+        callback: (value) => `${Math.round(Number(value) * 100)}%`,
       },
     },
   },
@@ -120,6 +146,20 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
         data: createPopulationSeries(this.historySubset.get()),
         borderColor: "hsl(211, 86%, 46%)",
         backgroundColor: "hsla(211, 86%, 46%, 0.14)",
+        fill: true,
+        pointRadius: 0,
+        tension: 0.2,
+      },
+    ],
+  }));
+
+  private readonly foodAvailabilityChartData = computed<ChartData>(() => ({
+    datasets: [
+      {
+        label: "Available food",
+        data: createFoodAvailabilitySeries(this.historySubset.get()),
+        borderColor: "hsl(142, 72%, 35%)",
+        backgroundColor: "hsla(142, 72%, 35%, 0.14)",
         fill: true,
         pointRadius: 0,
         tension: 0.2,
@@ -379,6 +419,21 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
               label="Population development"
               .data=${this.populationChartData.get()}
               .chartOptions=${populationChartOptions}
+            ></chart-wrapper>
+          </article>
+
+          <article class="chart-card wide-card">
+            <h3 class="chart-title">Food availability</h3>
+            <p class="chart-description">
+              Shows the share of food sources currently available in the
+              environment, making resource pressure visible alongside population
+              changes.
+            </p>
+            <chart-wrapper
+              type="line"
+              label="Food availability"
+              .data=${this.foodAvailabilityChartData.get()}
+              .chartOptions=${foodAvailabilityChartOptions}
             ></chart-wrapper>
           </article>
 
