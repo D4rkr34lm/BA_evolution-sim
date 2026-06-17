@@ -82,6 +82,18 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
     #pre-configuration-container {
       display: flex;
       flex-direction: column;
+      gap: 1rem;
+    }
+
+    .config-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-left: 1rem;
+    }
+
+    h4 {
+      margin: 0.5rem;
     }
   `;
 
@@ -100,11 +112,9 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
           >
           </sl-input>
         </sl-card>
-        <sl-details>
-          <div slot="summary">
+        <sl-card>
+          <div class="config-container">
             <h4>Graphs</h4>
-          </div>
-          <div>
             <sl-switch
               .checked="${this.form.formValue.get().graphs?.enabled ?? true}"
               @input="${() => this.toggleGraphOption("enabled")}"
@@ -146,7 +156,7 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
               Show Allele Historic Share Graph
             </sl-switch>
           </div>
-        </sl-details>
+        </sl-card>
       </div>
     `;
   }
