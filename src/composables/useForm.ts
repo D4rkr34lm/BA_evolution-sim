@@ -30,8 +30,7 @@ export function useForm<T extends Record<string | number | symbol, any>>(
     target: TPath,
     value: PathValue<T, TPath>,
   ) {
-    const old = formValue.get();
-    const updated = set(old, target, value);
+    const updated = set(cloneDeep(formValue.get()), target, value);
     formValue.set(updated);
     onChange?.(updated);
   }

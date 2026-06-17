@@ -1,6 +1,6 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { computed, html, signal, SignalWatcher } from "@lit-labs/signals";
 import { ChartData, ChartOptions } from "chart.js";
 import { SlDetails, SlOption, SlSelect } from "@shoelace-style/shoelace";
@@ -18,6 +18,8 @@ import {
   HISTORY_SUBSET_OPTIONS,
   HistorySubsetPreset,
 } from "./utils/simulationAnalysis";
+import { hasValue } from "@/utils/typeGuards";
+import { isEmpty } from "lodash-es";
 
 const DEFAULT_GENE_NAME: GeneName = definedGenes[0].name;
 
@@ -116,9 +118,28 @@ const currentDistributionOptions: ChartOptions = {
   },
 };
 
+export interface GraphConfig {
+  enabled: boolean;
+  showPopulationGraph: boolean;
+  showFoodAvailabilityGraph: boolean;
+  showAlleleHistoricShareGraph: boolean;
+  showAlleleShareGraph: boolean;
+}
+
+export const DEFAULT_GRAPH_OPTIONS = {
+  enabled: true,
+  showPopulationGraph: true,
+  showFoodAvailabilityGraph: true,
+  showAlleleHistoricShareGraph: true,
+  showAlleleShareGraph: true,
+};
+
 @customElement("simulation-analysis-view")
 export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
-  simulationStore = useSimulationStore();
+  @property({ attribute: false })
+  accessor configuration: GraphConfig = DEFAULT_GRAPH_OPTIONS;
+
+  private readonly simulationStore = useSimulationStore();
 
   private readonly selectedHistorySubsetPreset = signal<HistorySubsetPreset>(
     DEFAULT_HISTORY_SUBSET_PRESET,
@@ -295,11 +316,95 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     );
   }
 
+  private populationHistoryGraph() {
+    return html` <article class="graph-panel">
+      <h3 class="chart-title">Population development</h3>
+      <chart-wrapper
+        type="line"
+        label="Population development"
+        .data=${this.populationChartData.get()}
+        .chartOptions=${populationChartOptions}
+      ></chart-wrapper>
+    </article>`;
+  }
+
+  private foodAvailabilityGraph() {
+    return html` <article class="graph-panel">
+      <h3 class="chart-title">Food availability</h3>
+      <chart-wrapper
+        type="line"
+        label="Food availability"
+        .data=${this.foodAvailabilityChartData.get()}
+        .chartOptions=${foodAvailabilityChartOptions}
+      ></chart-wrapper>
+    </article>`;
+  }
+
+  private alleleShareOverTimeGraph() {
+    return html` <article class="graph-panel">
+      <h3 class="chart-title">Gene distribution over time</h3>
+      <div class="controls-row">
+        <sl-select
+          label="Gene"
+          .value=${this.selectedHistoryGene.get()}
+          @sl-change=${this.handleHistoryGeneChange}
+        >
+          ${this.renderGeneOptions()}
+        </sl-select>
+      </div>
+      <chart-wrapper
+        type="line"
+        label="Gene distribution over time"
+        .data=${this.alleleHistoryChartData.get()}
+        .chartOptions=${alleleShareLineOptions}
+      ></chart-wrapper>
+    </article>`;
+  }
+
+  private currentAlleleDistributionGraph() {
+    return html` <article class="graph-panel">
+      <h3 class="chart-title">Current gene distribution</h3>
+      <div class="controls-row">
+        <sl-select
+          label="Gene"
+          .value=${this.selectedCurrentGene.get()}
+          @sl-change=${this.handleCurrentGeneChange}
+        >
+          ${this.renderGeneOptions()}
+        </sl-select>
+      </div>
+      <chart-wrapper
+        type="bar"
+        label="Current gene distribution"
+        .data=${this.currentDistributionChartData.get()}
+        .chartOptions=${currentDistributionOptions}
+      ></chart-wrapper>
+    </article>`;
+  }
+
   render() {
     const selectedHistorySubsetPreset = this.selectedHistorySubsetPreset.get();
     const selectedHistorySubsetOption = HISTORY_SUBSET_OPTIONS.find(
       (option) => option.value === selectedHistorySubsetPreset,
     );
+
+    const {
+      showAlleleHistoricShareGraph,
+      showAlleleShareGraph,
+      showFoodAvailabilityGraph,
+      showPopulationGraph,
+    } = this.configuration;
+
+    const configuredGraphs = [
+      showAlleleHistoricShareGraph ? this.alleleShareOverTimeGraph() : null,
+      showAlleleShareGraph ? this.currentAlleleDistributionGraph() : null,
+      showFoodAvailabilityGraph ? this.foodAvailabilityGraph() : null,
+      showPopulationGraph ? this.populationHistoryGraph() : null,
+    ].filter(hasValue);
+
+    if (!this.configuration.enabled || isEmpty(configuredGraphs)) {
+      return html``;
+    }
 
     return html`
       <section id="analysis-container" aria-labelledby="analysis-heading">
@@ -309,7 +414,7 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
           </div>
 
           <div id="header">
-    <sl-select
+            <sl-select
               class="history-control"
               label="History window"
               .value=${selectedHistorySubsetPreset}
@@ -326,66 +431,8 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
                   Full history may lag during long simulations.
                 </p>`
               : null}
-  </div>
-          <div class="chart-grid">
-            <article class="graph-panel">
-              <h3 class="chart-title">Population development</h3>
-              <chart-wrapper
-                type="line"
-                label="Population development"
-                .data=${this.populationChartData.get()}
-                .chartOptions=${populationChartOptions}
-              ></chart-wrapper>
-            </article>
-
-            <article class="graph-panel">
-              <h3 class="chart-title">Food availability</h3>
-              <chart-wrapper
-                type="line"
-                label="Food availability"
-                .data=${this.foodAvailabilityChartData.get()}
-                .chartOptions=${foodAvailabilityChartOptions}
-              ></chart-wrapper>
-            </article>
-
-            <article class="graph-panel">
-              <h3 class="chart-title">Gene distribution over time</h3>
-              <div class="controls-row">
-                <sl-select
-                  label="Gene"
-                  .value=${this.selectedHistoryGene.get()}
-                  @sl-change=${this.handleHistoryGeneChange}
-                >
-                  ${this.renderGeneOptions()}
-                </sl-select>
-              </div>
-              <chart-wrapper
-                type="line"
-                label="Gene distribution over time"
-                .data=${this.alleleHistoryChartData.get()}
-                .chartOptions=${alleleShareLineOptions}
-              ></chart-wrapper>
-            </article>
-
-            <article class="graph-panel">
-              <h3 class="chart-title">Current gene distribution</h3>
-              <div class="controls-row">
-                <sl-select
-                  label="Gene"
-                  .value=${this.selectedCurrentGene.get()}
-                  @sl-change=${this.handleCurrentGeneChange}
-                >
-                  ${this.renderGeneOptions()}
-                </sl-select>
-              </div>
-              <chart-wrapper
-                type="bar"
-                label="Current gene distribution"
-                .data=${this.currentDistributionChartData.get()}
-                .chartOptions=${currentDistributionOptions}
-              ></chart-wrapper>
-            </article>
           </div>
+          <div class="chart-grid">${configuredGraphs}</div>
         </sl-details>
       </section>
     `;

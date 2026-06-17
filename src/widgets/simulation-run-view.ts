@@ -1,13 +1,17 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { SimulationStateRender } from "./simulation-state-render";
 import { SimulationControlsBar } from "./simulation-controls-bar";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { SimulationManualTools } from "./simulation-manual-tools";
 import { SimulationEntityView } from "./simulation-entity-view";
-import { SimulationAnalysisView } from "./simulation-analysis-view";
+import {
+  DEFAULT_GRAPH_OPTIONS,
+  SimulationAnalysisView,
+} from "./simulation-analysis-view";
+import { SimulationConfiguration } from "./simulation-pre-configuration-aside";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -19,6 +23,8 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
+  @property({ attribute: false })
+  accessor configuration: Partial<SimulationConfiguration> | null = null;
 
   simulationStore = useSimulationStore();
   private readonly widgetId = crypto.randomUUID();
@@ -60,6 +66,9 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
 
   /** Define your template here and return it. */
   render() {
+    const graphConfiguration =
+      this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS;
+
     return html`
       <div id="root">
         <simulation-state-render
@@ -71,7 +80,9 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
-          <simulation-analysis-view></simulation-analysis-view>
+          <simulation-analysis-view
+            .configuration=${graphConfiguration}
+          ></simulation-analysis-view>
         </div>
       </div>
     `;
