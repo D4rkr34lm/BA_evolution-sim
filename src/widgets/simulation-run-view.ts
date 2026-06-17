@@ -7,6 +7,7 @@ import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { SimulationManualTools } from "./simulation-manual-tools";
 import { SimulationEntityView } from "./simulation-entity-view";
+import { SimulationAnalysisView } from "./simulation-analysis-view";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -33,6 +34,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     "simulation-controls-bar": SimulationControlsBar,
     "simulation-manual-tools": SimulationManualTools,
     "simulation-entity-view": SimulationEntityView,
+    "simulation-analysis-view": SimulationAnalysisView,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -49,6 +51,11 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
       align-items: center;
       gap: 1rem;
     }
+
+    simulation-entity-view,
+    simulation-analysis-view {
+      width: 100%;
+    }
   `;
 
   /** Define your template here and return it. */
@@ -64,6 +71,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
+          <simulation-analysis-view></simulation-analysis-view>
         </div>
       </div>
     `;

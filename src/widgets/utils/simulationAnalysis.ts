@@ -1,0 +1,164 @@
+import { GeneName } from "@/simulation/genetics/definitions";
+import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
+
+export type HistorySubsetPreset = "last-50" | "last-100" | "last-250" | "full";
+
+export interface HistorySubsetOption {
+  value: HistorySubsetPreset;
+  label: string;
+  limit: number | null;
+  mayLag?: boolean;
+}
+
+export interface ChartPoint {
+  x: number;
+  y: number;
+}
+
+export interface AlleleShareSeries {
+  allele: number;
+  label: string;
+  data: ChartPoint[];
+}
+
+export interface AlleleDistributionEntry {
+  allele: number;
+  count: number;
+  share: number;
+}
+
+export const HISTORY_SUBSET_OPTIONS: HistorySubsetOption[] = [
+  { value: "last-50", label: "Last 50 ticks", limit: 50 },
+  { value: "last-100", label: "Last 100 ticks", limit: 100 },
+  { value: "last-250", label: "Last 250 ticks", limit: 250 },
+  { value: "full", label: "Full history", limit: null, mayLag: true },
+];
+
+export const DEFAULT_HISTORY_SUBSET_PRESET: HistorySubsetPreset = "last-100";
+
+export function getHistorySubset(
+  history: readonly SimulationSnapshot[],
+  preset: HistorySubsetPreset,
+): SimulationSnapshot[] {
+  const option = HISTORY_SUBSET_OPTIONS.find(
+    (option) => option.value === preset,
+  );
+
+  if (!option?.limit) {
+    return Array.from(history);
+  }
+
+  return history.slice(-option.limit);
+}
+
+export function createPopulationSeries(
+  snapshots: readonly SimulationSnapshot[],
+): ChartPoint[] {
+  return snapshots.map((snapshot) => ({
+    x: snapshot.tick,
+    y: snapshot.agents.length,
+  }));
+}
+
+function getGeneAllele(
+  agent: AgentSnapshot,
+  geneName: GeneName,
+): number | null {
+  return (
+    agent.genome.find((entry) => entry.geneName === geneName)?.allele ?? null
+  );
+}
+
+export function getAllelesForGene(
+  snapshots: readonly SimulationSnapshot[],
+  geneName: GeneName,
+): number[] {
+  const alleles = new Set<number>();
+
+  for (const snapshot of snapshots) {
+    for (const agent of snapshot.agents) {
+      const allele = getGeneAllele(agent, geneName);
+
+      if (allele !== null) {
+        alleles.add(allele);
+      }
+    }
+  }
+
+  return Array.from(alleles).sort((a, b) => a - b);
+}
+
+function getAlleleShareForSnapshot(
+  snapshot: SimulationSnapshot,
+  geneName: GeneName,
+  allele: number,
+): number {
+  const geneAlleles = snapshot.agents
+    .map((agent) => getGeneAllele(agent, geneName))
+    .filter((agentAllele): agentAllele is number => agentAllele !== null);
+
+  if (geneAlleles.length === 0) {
+    return 0;
+  }
+
+  const matchingAlleles = geneAlleles.filter(
+    (agentAllele) => agentAllele === allele,
+  ).length;
+
+  return matchingAlleles / geneAlleles.length;
+}
+
+export function createAlleleShareOverTimeSeries({
+  snapshots,
+  geneName,
+  alleles = getAllelesForGene(snapshots, geneName),
+}: {
+  snapshots: readonly SimulationSnapshot[];
+  geneName: GeneName;
+  alleles?: readonly number[];
+}): AlleleShareSeries[] {
+  return alleles.map((allele) => ({
+    allele,
+    label: `Allele ${allele}`,
+    data: snapshots.map((snapshot) => ({
+      x: snapshot.tick,
+      y: getAlleleShareForSnapshot(snapshot, geneName, allele),
+    })),
+  }));
+}
+
+export function createCurrentAlleleDistribution({
+  snapshot,
+  geneName,
+}: {
+  snapshot: SimulationSnapshot | null;
+  geneName: GeneName;
+}): AlleleDistributionEntry[] {
+  if (!snapshot) {
+    return [];
+  }
+
+  const alleleCounts = new Map<number, number>();
+  let totalGeneAlleles = 0;
+
+  for (const agent of snapshot.agents) {
+    const allele = getGeneAllele(agent, geneName);
+
+    if (allele !== null) {
+      alleleCounts.set(allele, (alleleCounts.get(allele) ?? 0) + 1);
+      totalGeneAlleles += 1;
+    }
+  }
+
+  return Array.from(alleleCounts.entries())
+    .map(([allele, count]) => ({
+      allele,
+      count,
+      share: totalGeneAlleles > 0 ? count / totalGeneAlleles : 0,
+    }))
+    .sort((a, b) => a.allele - b.allele);
+}
+
+export function getAlleleColor(allele: number, index: number) {
+  return `hsl(${(allele * 47 + index * 71) % 360}, 70%, 42%)`;
+}

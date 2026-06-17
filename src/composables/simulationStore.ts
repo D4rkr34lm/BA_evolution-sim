@@ -249,6 +249,7 @@ export function useSimulationStore() {
     selectEntity,
     selectEntityAt,
     currentSelection,
+    simulationHistory,
     currentActiveSimulationData,
     simulationStatus,
     simulationSpeed,
