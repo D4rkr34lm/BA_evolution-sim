@@ -3,7 +3,7 @@ import { LitElementWw } from "@webwriter/lit";
 import { customElement, property } from "lit/decorators.js";
 import { computed, html, signal, SignalWatcher } from "@lit-labs/signals";
 import { ChartData, ChartOptions } from "chart.js";
-import { SlDetails, SlOption, SlSelect } from "@shoelace-style/shoelace";
+import { SlCard, SlOption, SlSelect } from "@shoelace-style/shoelace";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { definedGenes, GeneName } from "@/simulation/genetics/definitions";
 import { ChartWrapper } from "./chart-wrapper";
@@ -221,7 +221,7 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
 
   static readonly scopedElements = {
     "chart-wrapper": ChartWrapper,
-    "sl-details": SlDetails,
+    "sl-card": SlCard,
     "sl-select": SlSelect,
     "sl-option": SlOption,
   };
@@ -230,25 +230,6 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     #analysis-container {
       display: grid;
       width: 100%;
-    }
-
-    .statistics-controls,
-    .graph-panel,
-    .controls-row {
-      box-sizing: border-box;
-    }
-
-    .statistics-controls {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      align-items: end;
-      padding: 0 1rem 1rem;
-    }
-
-    .analysis-title {
-      margin: 0;
-      font-size: 1.15rem;
     }
 
     .warning {
@@ -284,7 +265,6 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
     }
 
     #header {
-      display: inline-flex;
       gap: 1rem;
       padding: 1rem;
       align-items: center;
@@ -408,32 +388,26 @@ export class SimulationAnalysisView extends SignalWatcher(LitElementWw) {
 
     return html`
       <section id="analysis-container" aria-labelledby="analysis-heading">
-        <sl-details open>
-          <div slot="summary">
-            <h2>Statistics</h2>
-          </div>
-
-          <div id="header">
-            <sl-select
-              class="history-control"
-              label="History window"
-              .value=${selectedHistorySubsetPreset}
-              @sl-change=${this.handleHistorySubsetChange}
-            >
-              ${HISTORY_SUBSET_OPTIONS.map(
-                (option) => html`
-                  <sl-option value=${option.value}>${option.label}</sl-option>
-                `,
-              )}
-            </sl-select>
-            ${selectedHistorySubsetOption?.mayLag
-              ? html`<p class="warning">
-                  Full history may lag during long simulations.
-                </p>`
-              : null}
-          </div>
-          <div class="chart-grid">${configuredGraphs}</div>
-        </sl-details>
+        <div id="header">
+          <sl-select
+            class="history-control"
+            label="History window"
+            .value=${selectedHistorySubsetPreset}
+            @sl-change=${this.handleHistorySubsetChange}
+          >
+            ${HISTORY_SUBSET_OPTIONS.map(
+              (option) => html`
+                <sl-option value=${option.value}>${option.label}</sl-option>
+              `,
+            )}
+          </sl-select>
+          ${selectedHistorySubsetOption?.mayLag
+            ? html`<p class="warning">
+                Full history may lag during long simulations.
+              </p>`
+            : null}
+        </div>
+        <div class="chart-grid">${configuredGraphs}</div>
       </section>
     `;
   }

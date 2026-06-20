@@ -1,7 +1,7 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement } from "lit/decorators.js";
-import { SlCard, SlDetails, SlInput, SlSwitch } from "@shoelace-style/shoelace";
+import { SlCard, SlInput, SlSwitch } from "@shoelace-style/shoelace";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { SimulationInitOptions } from "@/simulation/Simulation.worker";
 import { useForm } from "@/composables/useForm";
@@ -72,7 +72,6 @@ export class SimulationPreConfigurationAside extends SignalWatcher(
    **/
   static readonly scopedElements = {
     "sl-input": SlInput,
-    "sl-details": SlDetails,
     "sl-card": SlCard,
     "sl-switch": SlSwitch,
   };

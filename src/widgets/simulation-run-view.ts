@@ -12,6 +12,7 @@ import {
   SimulationAnalysisView,
 } from "./simulation-analysis-view";
 import { SimulationConfiguration } from "./simulation-pre-configuration-aside";
+import { SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -41,6 +42,9 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     "simulation-manual-tools": SimulationManualTools,
     "simulation-entity-view": SimulationEntityView,
     "simulation-analysis-view": SimulationAnalysisView,
+    "sl-tab": SlTab,
+    "sl-tab-group": SlTabGroup,
+    "sl-tab-panel": SlTabPanel,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -49,6 +53,14 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+    }
+
+    .simulation-tab-content,
+    .graphs-tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
     }
 
     #bottom-bar {
@@ -64,13 +76,9 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     }
   `;
 
-  /** Define your template here and return it. */
-  render() {
-    const graphConfiguration =
-      this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS;
-
+  private renderSimulationTabContent() {
     return html`
-      <div id="root">
+      <div class="simulation-tab-content">
         <simulation-state-render
           .widgetId=${this.widgetId}
         ></simulation-state-render>
@@ -80,11 +88,45 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
-          <simulation-analysis-view
-            .configuration=${graphConfiguration}
-          ></simulation-analysis-view>
         </div>
       </div>
     `;
+  }
+
+  private renderGraphsTabContent() {
+    return html`
+      <div class="graphs-tab-content">
+        <simulation-analysis-view
+          .configuration=${this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS}
+        ></simulation-analysis-view>
+      </div>
+    `;
+  }
+
+  /** Define your template here and return it. */
+  render() {
+    const graphConfiguration =
+      this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS;
+
+    if (graphConfiguration.enabled) {
+      return html`
+        <div>
+          <sl-tab-group>
+            <sl-tab slot="nav" panel="simulation">Simulation</sl-tab>
+            <sl-tab slot="nav" panel="graphs">Graphs</sl-tab>
+
+            <sl-tab-panel name="simulation">
+              ${this.renderSimulationTabContent()}
+            </sl-tab-panel>
+
+            <sl-tab-panel name="graphs">
+              ${this.renderGraphsTabContent()}
+            </sl-tab-panel>
+          </sl-tab-group>
+        </div>
+      `;
+    } else {
+      return html` <div id="root">${this.renderSimulationTabContent()}</div> `;
+    }
   }
 }
