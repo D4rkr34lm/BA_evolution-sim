@@ -1,10 +1,11 @@
 import { Texture } from "pixi.js";
 
-import AgentSpriteData from "./MockAgentSprite.png";
+import AgentBodySprite from "./MockAgentBodySprite.png";
+import AgentEyesSprite from "./MockAgentBodySprite.png";
 import BackgroundTileData from "./MockBackgroundTile.png";
 import FoodSourceSpriteData from "./MockFoodSourceSprite.png";
 
-export { AgentSpriteData, FoodSourceSpriteData };
+export { AgentBodySprite, AgentEyesSprite, FoodSourceSpriteData };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toTexture(data: any): Texture {
@@ -15,7 +16,10 @@ function toTexture(data: any): Texture {
 }
 
 export const Textures = {
-  agent: toTexture(AgentSpriteData),
   backgroundTile: toTexture(BackgroundTileData),
   foodSource: toTexture(FoodSourceSpriteData),
+  agent: {
+    body: toTexture(AgentBodySprite),
+    eyes: toTexture(AgentEyesSprite),
+  },
 };

@@ -18,6 +18,7 @@ import { SIMULATION_ENTITY_LAYERS } from "@/simulation/entityPresentation";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { SignalWatcher } from "@lit-labs/signals";
 import { effect } from "signal-utils/subtle/microtask-effect";
+import { GenomeRenderer } from "./utils/geneRendering";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -61,27 +62,27 @@ class BackgroundRenderer {
     this.backgroundTilesSprite.setSize(backgroundTileSize);
   }
 }
+
 class AgentRenderer implements EntitySnapshotRenderer<AgentSnapshot> {
   readonly root: Container;
-  readonly bodySprite: Sprite;
+  genomeRenderer?: GenomeRenderer;
 
   constructor() {
     this.root = new Container({
       zIndex: SIMULATION_ENTITY_LAYERS.agent,
     });
-    this.bodySprite = new Sprite({
-      texture: Textures.agent,
-      width: SIMULATION_TILE_SIZE,
-      height: SIMULATION_TILE_SIZE,
-    });
-    this.root.addChild(this.bodySprite);
   }
 
   update(agentSnapshot: AgentSnapshot) {
+    if (hasNoValue(this.genomeRenderer)) {
+      this.genomeRenderer = new GenomeRenderer(agentSnapshot.genome);
+      this.root.addChild(this.genomeRenderer.root);
+    }
+
     const tilePosition = toTilePosition(agentSnapshot.state.position);
 
-    this.bodySprite.x = tilePosition.x;
-    this.bodySprite.y = tilePosition.y;
+    this.root.x = tilePosition.x;
+    this.root.y = tilePosition.y;
   }
 }
 
