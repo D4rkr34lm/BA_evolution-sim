@@ -1,5 +1,6 @@
 import { GeneName } from "@/simulation/genetics/definitions";
 import { AgentSnapshot, SimulationSnapshot } from "@/simulation/serialization";
+import { hasValue } from "@/utils/typeGuards";
 
 export type HistorySubsetPreset = "last-50" | "last-100" | "last-250" | "full";
 
@@ -7,6 +8,7 @@ export interface HistorySubsetOption {
   value: HistorySubsetPreset;
   label: string;
   limit: number | null;
+  roundToMultipleOf?: number;
   mayLag?: boolean;
 }
 
@@ -28,14 +30,28 @@ export interface AlleleDistributionEntry {
 }
 
 export const HISTORY_SUBSET_OPTIONS: HistorySubsetOption[] = [
-  { value: "last-50", label: "Last 50 ticks", limit: 50 },
-  { value: "last-100", label: "Last 100 ticks", limit: 100 },
-  { value: "last-250", label: "Last 250 ticks", limit: 250 },
+  {
+    value: "last-50",
+    label: "Last 50 ticks",
+    limit: 50,
+    roundToMultipleOf: 10,
+  },
+  {
+    value: "last-100",
+    label: "Last 100 ticks",
+    limit: 100,
+    roundToMultipleOf: 20,
+  },
+  {
+    value: "last-250",
+    label: "Last 250 ticks",
+    limit: 250,
+    roundToMultipleOf: 50,
+  },
   { value: "full", label: "Full history", limit: null, mayLag: true },
 ];
 
 export const DEFAULT_HISTORY_SUBSET_PRESET: HistorySubsetPreset = "last-100";
-const HISTORY_AXIS_STEP = 20;
 
 function roundUpToMultiple(value: number, multiple: number) {
   return Math.ceil(value / multiple) * multiple;
@@ -69,7 +85,10 @@ export function getHistorySubset(
     return snapshots;
   }
 
-  const alignedStartTick = roundUpToMultiple(rawStartTick, HISTORY_AXIS_STEP);
+  const startTickAlignmentMultiple = option.roundToMultipleOf;
+  const alignedStartTick = hasValue(startTickAlignmentMultiple)
+    ? roundUpToMultiple(rawStartTick, startTickAlignmentMultiple)
+    : rawStartTick;
   const alignedSubset = snapshots.filter(
     (snapshot) => snapshot.tick >= alignedStartTick,
   );

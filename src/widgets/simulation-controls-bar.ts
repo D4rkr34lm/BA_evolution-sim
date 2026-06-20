@@ -38,6 +38,7 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
       flex-direction: row;
       gap: 0.5rem;
       align-items: center;
+      justify-content: center;
       flex-wrap: wrap;
     }
   `;

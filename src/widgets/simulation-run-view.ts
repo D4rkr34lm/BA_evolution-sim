@@ -71,6 +71,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     }
 
     simulation-entity-view,
+    simulation-controls-bar,
     simulation-analysis-view {
       width: 100%;
     }
@@ -79,12 +80,13 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   private renderSimulationTabContent() {
     return html`
       <div class="simulation-tab-content">
+        <simulation-controls-bar></simulation-controls-bar>
         <simulation-state-render
           .widgetId=${this.widgetId}
         ></simulation-state-render>
         <div id="bottom-bar">
           <simulation-entity-view></simulation-entity-view>
-          <simulation-controls-bar></simulation-controls-bar>
+
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
@@ -96,6 +98,7 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   private renderGraphsTabContent() {
     return html`
       <div class="graphs-tab-content">
+        <simulation-controls-bar></simulation-controls-bar>
         <simulation-analysis-view
           .configuration=${this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS}
         ></simulation-analysis-view>
