@@ -10,7 +10,7 @@ import {
   SimulationSnapshot,
 } from "@/simulation/serialization";
 import { hasNoValue, hasValue } from "@/utils/typeGuards";
-import { Textures } from "./assets";
+import { loadTextures, Textures } from "./assets";
 import { SimulationMetadata } from "@/simulation/running";
 import { scaleVector, Vec2 } from "@/simulation/position";
 import { SIMULATION_TILE_SIZE } from "@/simulation/rendering";
@@ -38,14 +38,8 @@ class BackgroundRenderer {
   readonly backgroundTilesSprite: TilingSprite;
 
   constructor() {
-    const tileScale: Vec2 = {
-      x: SIMULATION_TILE_SIZE / Textures.backgroundTile.width,
-      y: SIMULATION_TILE_SIZE / Textures.backgroundTile.height,
-    };
-
     this.backgroundTilesSprite = new TilingSprite({
       texture: Textures.backgroundTile,
-      tileScale,
     });
 
     this.root = new Container();
@@ -54,6 +48,12 @@ class BackgroundRenderer {
   }
 
   update(worldSize: Vec2) {
+    this.backgroundTilesSprite.texture = Textures.backgroundTile;
+    this.backgroundTilesSprite.tileScale = {
+      x: SIMULATION_TILE_SIZE / Textures.backgroundTile.width,
+      y: SIMULATION_TILE_SIZE / Textures.backgroundTile.height,
+    };
+
     const backgroundTileSize = {
       width: SIMULATION_TILE_SIZE * worldSize.x,
       height: SIMULATION_TILE_SIZE * worldSize.y,
@@ -291,6 +291,8 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
   }
 
   private async setupCanvas() {
+    await loadTextures();
+
     const app = new Application();
 
     await app.init({ resizeTo: this.canvasContainer, background: "#FFFFFF" });

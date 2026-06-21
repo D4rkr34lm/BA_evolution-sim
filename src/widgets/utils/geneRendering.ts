@@ -11,6 +11,8 @@ abstract class GeneRenderer<
 > {
   readonly root: Container;
   readonly geneSprite: Sprite;
+  readonly zIndex: number;
+  readonly baseScale: number;
 
   readonly geneName: TGeneName;
 
@@ -20,14 +22,21 @@ abstract class GeneRenderer<
     gene: TGene,
     geneTexture: Texture,
   ) {
+    this.zIndex = zIndex;
+    this.baseScale =
+      SIMULATION_TILE_SIZE / Math.max(geneTexture.width, geneTexture.height);
     this.root = new Container({
       zIndex: SIMULATION_ENTITY_LAYERS.agent + zIndex,
     });
     this.geneSprite = new Sprite({
       texture: geneTexture,
-      width: SIMULATION_TILE_SIZE,
-      height: SIMULATION_TILE_SIZE,
     });
+    this.geneSprite.anchor.set(0.5);
+    this.geneSprite.position.set(
+      SIMULATION_TILE_SIZE / 2,
+      SIMULATION_TILE_SIZE / 2,
+    );
+    this.geneSprite.scale.set(this.baseScale);
     this.root.addChild(this.geneSprite);
     this.geneName = geneName;
 
@@ -53,6 +62,7 @@ export const geneRenderers: GeneRenderers = {
           (geneDefinition.max - geneDefinition.min);
 
         const tintValue = Math.floor(geneValueRatio * 0xffffff);
+        this.geneSprite.scale.set(this.baseScale);
         this.geneSprite.tint = tintValue;
       }
     })(0, "energy-capacity", gene, Textures.agent.body);
@@ -74,11 +84,7 @@ export const geneRenderers: GeneRenderers = {
         const maxScale = 1.5;
         const scale = minScale + geneValueRatio * (maxScale - minScale);
 
-        this.geneSprite.scale.set(scale);
-        this.geneSprite.position.set(
-          -((scale - 1) * SIMULATION_TILE_SIZE) / 2,
-          -((scale - 1) * SIMULATION_TILE_SIZE) / 2,
-        );
+        this.geneSprite.scale.set(this.baseScale * scale);
       }
     })(1, "vision-range", gene, Textures.agent.eyes);
 
@@ -92,7 +98,9 @@ export class GenomeRenderer {
   readonly geneRenderers: Array<GeneRenderer<GeneName>>;
 
   constructor(genome: Genome) {
-    this.root = new Container();
+    this.root = new Container({
+      sortableChildren: true,
+    });
     this.geneRenderers = [];
 
     this.geneRenderers = genome.map((geneEntry) => {
@@ -104,8 +112,11 @@ export class GenomeRenderer {
       return geneRenderer;
     });
 
-    this.geneRenderers.forEach((renderer) => {
-      this.root.addChild(renderer.root);
-    });
+    this.geneRenderers
+      .slice()
+      .sort((left, right) => left.zIndex - right.zIndex)
+      .forEach((renderer) => {
+        this.root.addChild(renderer.root);
+      });
   }
 }

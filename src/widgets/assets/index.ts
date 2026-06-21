@@ -1,25 +1,42 @@
-import { Texture } from "pixi.js";
+import { Assets, Texture } from "pixi.js";
 
 import AgentBodySprite from "./MockAgentBodySprite.png";
-import AgentEyesSprite from "./MockAgentBodySprite.png";
+import AgentEyesSprite from "./MockAgentEyesSprite.png";
 import BackgroundTileData from "./MockBackgroundTile.png";
 import FoodSourceSpriteData from "./MockFoodSourceSprite.png";
 
-export { AgentBodySprite, AgentEyesSprite, FoodSourceSpriteData };
+const AgentSpriteData = AgentBodySprite;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toTexture(data: any): Texture {
-  const image = new Image();
-  image.src = data;
-
-  return Texture.from(image);
-}
+export {
+  AgentBodySprite,
+  AgentEyesSprite,
+  AgentSpriteData,
+  FoodSourceSpriteData,
+};
 
 export const Textures = {
-  backgroundTile: toTexture(BackgroundTileData),
-  foodSource: toTexture(FoodSourceSpriteData),
+  backgroundTile: Texture.EMPTY,
+  foodSource: Texture.EMPTY,
   agent: {
-    body: toTexture(AgentBodySprite),
-    eyes: toTexture(AgentEyesSprite),
+    body: Texture.EMPTY,
+    eyes: Texture.EMPTY,
   },
 };
+
+let loadTexturesPromise: Promise<void> | null = null;
+
+export function loadTextures() {
+  loadTexturesPromise ??= Promise.all([
+    Assets.load(BackgroundTileData),
+    Assets.load(FoodSourceSpriteData),
+    Assets.load(AgentBodySprite),
+    Assets.load(AgentEyesSprite),
+  ]).then(([backgroundTile, foodSource, agentBody, agentEyes]) => {
+    Textures.backgroundTile = backgroundTile;
+    Textures.foodSource = foodSource;
+    Textures.agent.body = agentBody;
+    Textures.agent.eyes = agentEyes;
+  });
+
+  return loadTexturesPromise;
+}
