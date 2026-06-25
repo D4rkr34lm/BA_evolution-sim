@@ -1,7 +1,8 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { SimulationRunView } from "./simulation-run-view";
+import { SimulationCreationDialog } from "./simulation-creation-dialog";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
 import {
@@ -28,6 +29,9 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
 
   private lastInitializedInitOptions: SimulationInitOptions | null = null;
 
+  @state()
+  private accessor isNewSimulationDialogOpen = false;
+
   /** Register the classes of custom elements to use in the Shadow DOM here.
    * @example
    * import SlButton from "@shoelace-style/shoelace/dist/components/button/button.component.js"
@@ -37,6 +41,7 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
   static readonly scopedElements = {
     "simulation-run-view": SimulationRunView,
     "simulation-pre-configuration-aside": SimulationPreConfigurationAside,
+    "simulation-creation-dialog": SimulationCreationDialog,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -91,6 +96,18 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
   render() {
     return html`
       <div id="root">
+        <simulation-creation-dialog
+          .simulationConfiguration=${this.simulationConfiguration}
+          .open=${this.isNewSimulationDialogOpen}
+          @configuration-change="${(e: ConfigurationChangeEvent) => {
+            this.simulationConfiguration = e.detail;
+            this.isNewSimulationDialogOpen = false;
+          }}"
+          @dialog-close=${() => {
+            this.isNewSimulationDialogOpen = false;
+          }}
+        ></simulation-creation-dialog>
+
         <simulation-pre-configuration-aside
           part="options"
           .configuration=${this.simulationConfiguration}
@@ -101,6 +118,9 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
 
         <simulation-run-view
           .configuration=${this.simulationConfiguration}
+          @open-new-simulation-dialog=${() => {
+            this.isNewSimulationDialogOpen = true;
+          }}
         ></simulation-run-view>
       </div>
     `;

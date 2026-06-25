@@ -5,7 +5,7 @@ import { SignalWatcher, html } from "@lit-labs/signals";
 import { SimulationConfiguration } from "./simulation-pre-configuration-aside";
 import { SimulationInitOptions } from "@/simulation/Simulation.worker";
 import { cloneDeep, set } from "lodash-es";
-import { SlDialog } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlIcon, SlInput } from "@shoelace-style/shoelace";
 import { createInputHandler } from "@/utils/handleInput";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
@@ -13,8 +13,8 @@ import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
 
-@customElement("webwriter-evolution-sim")
-export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
+@customElement("simulation-creation-dialog")
+export class SimulationCreationDialog extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
@@ -27,10 +27,41 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
    **/
   static readonly scopedElements = {
     "sl-dialog": SlDialog,
+    "sl-input": SlInput,
+    "sl-button": SlButton,
+    "sl-icon": SlIcon,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
-  static readonly styles = css``;
+  static readonly styles = css`
+    sl-dialog::part(panel) {
+      width: min(34rem, calc(100vw - 2rem));
+    }
+
+    .dialog-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .intro {
+      margin: 0;
+      color: var(--sl-color-neutral-700, #374151);
+    }
+
+    .world-size-inputs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+  `;
 
   @property({ attribute: false })
   accessor simulationConfiguration!: SimulationConfiguration;
@@ -61,51 +92,106 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
     );
   }
 
-  renderOptionConfigurator(label: string, option: keyof SimulationInitOptions) {
+  renderOptionConfigurator(
+    label: string,
+    option: Exclude<keyof SimulationInitOptions, "worldSize">,
+  ) {
     const configurationValue = this.simulationConfiguration.initOptions[option];
     return html`
       <sl-input
+        type=${option === "seed" ? "text" : "number"}
         label=${label}
-        value=${this.simulationConfiguration.initOptions[option].value}
-        disabled=${configurationValue.locked}
+        .value=${String(configurationValue.value)}
+        ?disabled=${configurationValue.locked}
         @input=${createInputHandler((value) =>
-          this.updateConfiguration(`initOptions.${option}.value`, value),
+          this.updateConfiguration(
+            `initOptions.${option}.value`,
+            option === "seed" ? value : Number(value),
+          ),
         )}
       ></sl-input>
     `;
   }
 
-  /** Define your template here and return it. */
-  render() {
-    const fieldsToRender = [
-      { label: "Seed", option: "seed" },
-      { label: "World Size", option: "worldSize" },
-      { label: "Initial Agents", option: "initialAgentsAmount" },
-      {
-        label: "Initial Food Sources",
-        option: "initialFoodSourcesAmount",
-      },
-    ];
-
-    const configurationFields = fieldsToRender.map((field) =>
-      this.renderOptionConfigurator(
-        field.label,
-        field.option as keyof SimulationInitOptions,
-      ),
-    );
+  renderWorldSizeConfigurator() {
+    const configurationValue =
+      this.simulationConfiguration.initOptions.worldSize;
 
     return html`
-      <sl-dialog>
-        <h3>Create Simulation</h3>
-        <p>Create a new simulation with the following configuration:</p>
-        ${configurationFields}
-        <sl-button
-          @click=${() =>
-            this.emitCreateNewSimulation(this.simulationConfiguration)}
-        >
-          <sl-icon name="plus" slot="prefix"></sl-icon>
-          Create
-        </sl-button>
+      <div class="full-width">
+        <label>World Size</label>
+        <div class="world-size-inputs">
+          <sl-input
+            type="number"
+            label="W"
+            .value=${String(configurationValue.value.x)}
+            ?disabled=${configurationValue.locked}
+            @input=${createInputHandler((value) =>
+              this.updateConfiguration(
+                "initOptions.worldSize.value.x",
+                Number(value),
+              ),
+            )}
+          ></sl-input>
+          <sl-input
+            type="number"
+            label="H"
+            .value=${String(configurationValue.value.y)}
+            ?disabled=${configurationValue.locked}
+            @input=${createInputHandler((value) =>
+              this.updateConfiguration(
+                "initOptions.worldSize.value.y",
+                Number(value),
+              ),
+            )}
+          ></sl-input>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Define your template here and return it. */
+  render() {
+    return html`
+      <sl-dialog
+        label="Create Simulation"
+        .open=${this.open}
+        @sl-hide=${() => {
+          this.open = false;
+          this.dispatchEvent(
+            new CustomEvent("dialog-close", { bubbles: true, composed: true }),
+          );
+        }}
+      >
+        <div class="dialog-content">
+          <p class="intro">
+            Create a new simulation with the following configuration:
+          </p>
+
+          ${this.renderOptionConfigurator("Seed", "seed")}
+          ${this.renderWorldSizeConfigurator()}
+          ${this.renderOptionConfigurator(
+            "Initial Food Sources",
+            "initialFoodSourcesAmount",
+          )}
+          ${this.renderOptionConfigurator(
+            "Initial Agents",
+            "initialAgentsAmount",
+          )}
+        </div>
+        <div slot="footer" class="footer">
+          <sl-button @click=${() => (this.open = false)}>Cancel</sl-button>
+          <sl-button
+            variant="primary"
+            @click=${() => {
+              this.open = false;
+              this.emitCreateNewSimulation(this.simulationConfiguration);
+            }}
+          >
+            <sl-icon name="plus" slot="prefix"></sl-icon>
+            Create
+          </sl-button>
+        </div>
       </sl-dialog>
     `;
   }

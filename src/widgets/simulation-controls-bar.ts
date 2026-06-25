@@ -11,6 +11,7 @@ import LOCALIZE from '../localization/generated'
 import {msg} from '@lit/localize'
 */
 
+export type OpenNewSimulationDialogEvent = CustomEvent<unknown>;
 @customElement("simulation-controls-bar")
 export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
@@ -42,6 +43,15 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
       flex-wrap: wrap;
     }
   `;
+
+  openNewSimulationDialog() {
+    this.dispatchEvent(
+      new CustomEvent<undefined>("open-new-simulation-dialog", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
   /** Define your template here and return it. */
   render() {
@@ -78,6 +88,13 @@ export class SimulationControlsBar extends SignalWatcher(LitElementWw) {
           </sl-button>
         </sl-button-group>
         <sl-button-group>
+          <sl-button
+            ?disabled=${!hasActiveSimulation}
+            @click=${() => this.openNewSimulationDialog()}
+          >
+            <sl-icon name="plus"></sl-icon>
+            New
+          </sl-button>
           <sl-button
             ?disabled=${!hasActiveSimulation}
             @click=${() => this.simulationStore.resetSimulation()}
