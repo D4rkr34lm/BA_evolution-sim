@@ -9,6 +9,7 @@ import { when } from "lit/directives/when.js";
 import { SimulationConfigurationView } from "./simulation-configuration-view";
 import {
   ConfigurationChangeEvent,
+  SimulationConfiguration,
   SimulationPreConfigurationAside,
 } from "./simulation-pre-configuration-aside";
 import { SimulationInitOptions } from "@/simulation/Simulation.worker";
@@ -46,8 +47,8 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
     }
   `;
 
-  @property({ attribute: true })
-  accessor simulationPreConfiguration: Partial<SimulationInitOptions> | null =
+  @property({ attribute: false })
+  accessor simulationPreConfiguration: Partial<SimulationConfiguration> | null =
     null;
 
   /** Define your template here and return it. */
@@ -62,13 +63,22 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
         ></simulation-pre-configuration-aside>
         ${when(
           hasValue(this.simulationStore.currentActiveSimulationData.get()),
-          () => html` <simulation-run-view></simulation-run-view> `,
+          () => html`
+            <simulation-run-view
+              .configuration=${this.simulationPreConfiguration}
+            ></simulation-run-view>
+          `,
           () => html`
             <simulation-configuration-view
-              @start-simulation="${(e: CustomEvent) => {
+              @start-simulation="${(e: CustomEvent<SimulationInitOptions>) => {
+                const simulationPreConfiguration =
+                  this.simulationPreConfiguration;
+
                 this.simulationStore.initializeNewSimulation({
                   ...e.detail,
-                  ...this.simulationPreConfiguration,
+                  ...(hasValue(simulationPreConfiguration?.seed)
+                    ? { seed: simulationPreConfiguration.seed }
+                    : {}),
                 });
               }}"
             ></simulation-configuration-view>

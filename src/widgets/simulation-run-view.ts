@@ -1,12 +1,18 @@
 import { css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { SimulationStateRender } from "./simulation-state-render";
 import { SimulationControlsBar } from "./simulation-controls-bar";
 import { SignalWatcher, html } from "@lit-labs/signals";
 import { useSimulationStore } from "@/composables/simulationStore";
 import { SimulationManualTools } from "./simulation-manual-tools";
 import { SimulationEntityView } from "./simulation-entity-view";
+import {
+  DEFAULT_GRAPH_OPTIONS,
+  SimulationAnalysisView,
+} from "./simulation-analysis-view";
+import { SimulationConfiguration } from "./simulation-pre-configuration-aside";
+import { SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -18,6 +24,8 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
   /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
   localize = LOCALIZE
   */
+  @property({ attribute: false })
+  accessor configuration: Partial<SimulationConfiguration> | null = null;
 
   simulationStore = useSimulationStore();
   private readonly widgetId = crypto.randomUUID();
@@ -33,6 +41,10 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
     "simulation-controls-bar": SimulationControlsBar,
     "simulation-manual-tools": SimulationManualTools,
     "simulation-entity-view": SimulationEntityView,
+    "simulation-analysis-view": SimulationAnalysisView,
+    "sl-tab": SlTab,
+    "sl-tab-group": SlTabGroup,
+    "sl-tab-panel": SlTabPanel,
   };
 
   /** Put the styles for your Shadow DOM (what is rendered through render()) here. */
@@ -43,29 +55,81 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
       gap: 1rem;
     }
 
+    .simulation-tab-content,
+    .graphs-tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
     #bottom-bar {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1rem;
     }
+
+    simulation-entity-view,
+    simulation-controls-bar,
+    simulation-analysis-view {
+      width: 100%;
+    }
   `;
 
-  /** Define your template here and return it. */
-  render() {
+  private renderSimulationTabContent() {
     return html`
-      <div id="root">
+      <div class="simulation-tab-content">
+        <simulation-controls-bar></simulation-controls-bar>
         <simulation-state-render
           .widgetId=${this.widgetId}
         ></simulation-state-render>
         <div id="bottom-bar">
           <simulation-entity-view></simulation-entity-view>
-          <simulation-controls-bar></simulation-controls-bar>
+
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
         </div>
       </div>
     `;
+  }
+
+  private renderGraphsTabContent() {
+    return html`
+      <div class="graphs-tab-content">
+        <simulation-controls-bar></simulation-controls-bar>
+        <simulation-analysis-view
+          .configuration=${this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS}
+        ></simulation-analysis-view>
+      </div>
+    `;
+  }
+
+  /** Define your template here and return it. */
+  render() {
+    const graphConfiguration =
+      this.configuration?.graphs ?? DEFAULT_GRAPH_OPTIONS;
+
+    if (graphConfiguration.enabled) {
+      return html`
+        <div>
+          <sl-tab-group>
+            <sl-tab slot="nav" panel="simulation">Simulation</sl-tab>
+            <sl-tab slot="nav" panel="graphs">Graphs</sl-tab>
+
+            <sl-tab-panel name="simulation">
+              ${this.renderSimulationTabContent()}
+            </sl-tab-panel>
+
+            <sl-tab-panel name="graphs">
+              ${this.renderGraphsTabContent()}
+            </sl-tab-panel>
+          </sl-tab-group>
+        </div>
+      `;
+    } else {
+      return html` <div id="root">${this.renderSimulationTabContent()}</div> `;
+    }
   }
 }
