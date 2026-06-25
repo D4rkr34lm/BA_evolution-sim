@@ -4,15 +4,9 @@ import AgentBodySprite from "./MockAgentBodySprite.png";
 import AgentEyesSprite from "./MockAgentEyesSprite.png";
 import BackgroundTileData from "./MockBackgroundTile.png";
 import FoodSourceSpriteData from "./MockFoodSourceSprite.png";
+import AgentPreviewSpriteData from "./MockAgentPreview.png";
 
-const AgentSpriteData = AgentBodySprite;
-
-export {
-  AgentBodySprite,
-  AgentEyesSprite,
-  AgentSpriteData,
-  FoodSourceSpriteData,
-};
+export { AgentBodySprite, AgentPreviewSpriteData, FoodSourceSpriteData };
 
 export const Textures = {
   backgroundTile: Texture.EMPTY,
