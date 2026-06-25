@@ -3,16 +3,15 @@ import { LitElementWw } from "@webwriter/lit";
 import { customElement, property } from "lit/decorators.js";
 import { SimulationRunView } from "./simulation-run-view";
 import { SignalWatcher, html } from "@lit-labs/signals";
-import { hasValue } from "@/utils/typeGuards";
 import { useSimulationStore } from "@/composables/simulationStore";
-import { when } from "lit/directives/when.js";
-import { SimulationConfigurationView } from "./simulation-configuration-view";
 import {
   ConfigurationChangeEvent,
+  DEFAULT_SIMULATION_CONFIGURATION,
   SimulationConfiguration,
   SimulationPreConfigurationAside,
 } from "./simulation-pre-configuration-aside";
 import { SimulationInitOptions } from "@/simulation/Simulation.worker";
+import { isEqual } from "lodash-es";
 
 /* Optional LOCALIZATION: Uncomment this after first running `npm run localize` in the command line.
 import LOCALIZE from '../localization/generated'
@@ -27,6 +26,8 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
 
   simulationStore = useSimulationStore();
 
+  private lastInitializedInitOptions: SimulationInitOptions | null = null;
+
   /** Register the classes of custom elements to use in the Shadow DOM here.
    * @example
    * import SlButton from "@shoelace-style/shoelace/dist/components/button/button.component.js"
@@ -35,7 +36,6 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
    **/
   static readonly scopedElements = {
     "simulation-run-view": SimulationRunView,
-    "simulation-configuration-view": SimulationConfigurationView,
     "simulation-pre-configuration-aside": SimulationPreConfigurationAside,
   };
 
@@ -47,9 +47,45 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
     }
   `;
 
-  @property({ attribute: false })
-  accessor simulationPreConfiguration: Partial<SimulationConfiguration> | null =
-    null;
+  @property({ attribute: true })
+  accessor simulationConfiguration: SimulationConfiguration =
+    DEFAULT_SIMULATION_CONFIGURATION;
+
+  private getSimulationInitOptions(): SimulationInitOptions {
+    const { initOptions } = this.simulationConfiguration;
+    const worldSize = initOptions.worldSize.value;
+
+    return {
+      seed: initOptions.seed.value,
+      worldSize: {
+        x: worldSize.x,
+        y: worldSize.y,
+      },
+      initialAgentsAmount: initOptions.initialAgentsAmount.value,
+      initialFoodSourcesAmount: initOptions.initialFoodSourcesAmount.value,
+    };
+  }
+
+  private initializeSimulationFromConfiguration() {
+    const initOptions = this.getSimulationInitOptions();
+
+    if (isEqual(initOptions, this.lastInitializedInitOptions)) {
+      return;
+    }
+
+    this.lastInitializedInitOptions = initOptions;
+    this.simulationStore.initializeNewSimulation(initOptions);
+  }
+
+  firstUpdated() {
+    this.initializeSimulationFromConfiguration();
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has("simulationConfiguration")) {
+      this.initializeSimulationFromConfiguration();
+    }
+  }
 
   /** Define your template here and return it. */
   render() {
@@ -57,33 +93,15 @@ export class WebwriterEvolutionSim extends SignalWatcher(LitElementWw) {
       <div id="root">
         <simulation-pre-configuration-aside
           part="options"
+          .configuration=${this.simulationConfiguration}
           @configuration-change="${(e: ConfigurationChangeEvent) => {
-            this.simulationPreConfiguration = e.detail;
+            this.simulationConfiguration = e.detail;
           }}"
         ></simulation-pre-configuration-aside>
-        ${when(
-          hasValue(this.simulationStore.currentActiveSimulationData.get()),
-          () => html`
-            <simulation-run-view
-              .configuration=${this.simulationPreConfiguration}
-            ></simulation-run-view>
-          `,
-          () => html`
-            <simulation-configuration-view
-              @start-simulation="${(e: CustomEvent<SimulationInitOptions>) => {
-                const simulationPreConfiguration =
-                  this.simulationPreConfiguration;
 
-                this.simulationStore.initializeNewSimulation({
-                  ...e.detail,
-                  ...(hasValue(simulationPreConfiguration?.seed)
-                    ? { seed: simulationPreConfiguration.seed }
-                    : {}),
-                });
-              }}"
-            ></simulation-configuration-view>
-          `,
-        )}
+        <simulation-run-view
+          .configuration=${this.simulationConfiguration}
+        ></simulation-run-view>
       </div>
     `;
   }
