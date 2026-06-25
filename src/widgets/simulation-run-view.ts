@@ -85,11 +85,10 @@ export class SimulationRunView extends SignalWatcher(LitElementWw) {
           .widgetId=${this.widgetId}
         ></simulation-state-render>
         <div id="bottom-bar">
-          <simulation-entity-view></simulation-entity-view>
-
           <simulation-manual-tools
             .widgetId=${this.widgetId}
           ></simulation-manual-tools>
+          <simulation-entity-view></simulation-entity-view>
         </div>
       </div>
     `;
