@@ -2,6 +2,7 @@ import { html, css } from "lit";
 import { LitElementWw } from "@webwriter/lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { Application, Container, Sprite, TilingSprite } from "pixi.js";
 import {
   AgentSnapshot,
@@ -203,6 +204,7 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
   app: Application | null = null;
   renderer = useSimulationRenderer();
   unwatch: (() => void) | null = null;
+  private currentWorldSize: Vec2 | null = null;
 
   private readonly handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -224,10 +226,28 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
     const scaleX = this.app.screen.width / bounds.width;
     const scaleY = this.app.screen.height / bounds.height;
 
-    return {
-      x: Math.floor((localX * scaleX) / SIMULATION_TILE_SIZE),
-      y: Math.floor((localY * scaleY) / SIMULATION_TILE_SIZE),
+    const worldX =
+      (localX * scaleX - this.renderer.root.position.x) /
+      this.renderer.root.scale.x;
+    const worldY =
+      (localY * scaleY - this.renderer.root.position.y) /
+      this.renderer.root.scale.y;
+    const tilePosition = {
+      x: Math.floor(worldX / SIMULATION_TILE_SIZE),
+      y: Math.floor(worldY / SIMULATION_TILE_SIZE),
     };
+
+    if (
+      !hasValue(this.currentWorldSize) ||
+      tilePosition.x < 0 ||
+      tilePosition.y < 0 ||
+      tilePosition.x >= this.currentWorldSize.x ||
+      tilePosition.y >= this.currentWorldSize.y
+    ) {
+      return null;
+    }
+
+    return tilePosition;
   }
 
   private getTilePositionFromEvent(event: DragEvent): Vec2 | null {
@@ -289,6 +309,30 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
     }
   }
 
+  private fitSimulationToCanvas() {
+    if (!hasValue(this.app) || !hasValue(this.currentWorldSize)) {
+      return;
+    }
+
+    const worldPixelWidth = this.currentWorldSize.x * SIMULATION_TILE_SIZE;
+    const worldPixelHeight = this.currentWorldSize.y * SIMULATION_TILE_SIZE;
+
+    if (worldPixelWidth <= 0 || worldPixelHeight <= 0) {
+      return;
+    }
+
+    const scale = Math.min(
+      this.app.screen.width / worldPixelWidth,
+      this.app.screen.height / worldPixelHeight,
+    );
+
+    this.renderer.root.scale.set(scale);
+    this.renderer.root.position.set(
+      (this.app.screen.width - worldPixelWidth * scale) / 2,
+      (this.app.screen.height - worldPixelHeight * scale) / 2,
+    );
+  }
+
   private async setupCanvas() {
     const app = new Application();
 
@@ -312,6 +356,12 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
     #simulation-container {
       width: 100%;
       aspect-ratio: 16 / 9;
+      line-height: 0;
+      overflow: hidden;
+    }
+
+    #simulation-container canvas {
+      display: block;
     }
 
     #simulation-container.delete-mode {
@@ -325,11 +375,21 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
   render() {
     const isDeleteMode =
       this.simulationStore.activeManualTool.get() === "remove-entity";
+    const worldSize =
+      this.simulationStore.currentActiveSimulationData.get()?.metadata
+        .worldSize;
+    const aspectRatio =
+      hasValue(worldSize) && worldSize.x > 0 && worldSize.y > 0
+        ? `${worldSize.x} / ${worldSize.y}`
+        : "16 / 9";
 
     return html`
       <div
         id="simulation-container"
         class=${classMap({ "delete-mode": isDeleteMode })}
+        style=${styleMap({
+          "aspect-ratio": aspectRatio,
+        })}
         @dragover=${this.handleDragOver}
         @drop=${this.handleDrop}
         @click=${this.handleClick}
@@ -350,7 +410,20 @@ export class SimulationStateRender extends SignalWatcher(LitElementWw) {
       const data = this.simulationStore.currentActiveSimulationData.get();
 
       if (hasValue(data)) {
+        const previousWorldSize = this.currentWorldSize;
+        this.currentWorldSize = data.metadata.worldSize;
         this.renderer.update(data.metadata, data.snapshot);
+
+        if (
+          !hasValue(previousWorldSize) ||
+          previousWorldSize.x !== data.metadata.worldSize.x ||
+          previousWorldSize.y !== data.metadata.worldSize.y
+        ) {
+          this.updateComplete.then(() => {
+            this.app?.resize();
+            this.fitSimulationToCanvas();
+          });
+        }
       }
     });
   }
